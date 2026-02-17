@@ -81,7 +81,7 @@ class OnboardingThirdScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 25),   //was 32
 
               /// 6. Steps Card
               Container(
@@ -100,12 +100,12 @@ class OnboardingThirdScreen extends StatelessWidget {
                     SizedBox(height: 18),
                     _StepRow(
                       number: "2",
-                      text: "Prevent Food Waste: Proactively manage surplus and get insight on funnel that surplus through our Suggestion Engine",
+                      text: "Prevent Food Waste through our Suggestion Engine",
                     ),
                     SizedBox(height: 18),
                     _StepRow(
                       number: "3",
-                      text: "Avoid Cashflow Surprises: Know when money might run low and plan accordingly",
+                      text: "Avoid Cashflow Surprises: Know ahead of time, plan accordingly",
                     ),
                   ],
                 ),
@@ -187,7 +187,7 @@ class _OnboardingIndicator extends StatelessWidget {
           duration: const Duration(milliseconds: 300),
           margin: const EdgeInsets.symmetric(horizontal: 4),
           height: 8,
-          width: currentIndex == index ? 24 : 8, // Active indicator is longer
+          width: currentIndex == index ? 24 : 8, // longer...active indicator
           decoration: BoxDecoration(
             color: currentIndex == index
                 ? Colors.green.shade700

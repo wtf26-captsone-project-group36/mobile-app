@@ -53,7 +53,7 @@ class OnboardingFirstScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 18),
 
               /// Page Indicators
               const OnboardingIndicator(
@@ -73,7 +73,7 @@ class OnboardingFirstScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 60),
+              const SizedBox(height: 25),
 
               /// Feature Row
               const Row(
@@ -107,7 +107,7 @@ class OnboardingFirstScreen extends StatelessWidget {
                   onPressed: onNext,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromARGB(255, 86, 172, 90),
-                    foregroundColor: Colors.white, // Makes the text white
+                    foregroundColor: Colors.white,                                   //text white
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -123,7 +123,7 @@ class OnboardingFirstScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 18),               //was 24
             ],
           ),
         ),
