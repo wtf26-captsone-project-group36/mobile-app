@@ -22,8 +22,8 @@ class LandingPage extends StatelessWidget {
               
               // Tightened Logo (60x60)
               Container(
-                width: 60,
-                height: 60,
+                width: 150,
+                height: 150,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(color: primaryGreen, width: 1.5),
@@ -31,19 +31,16 @@ class LandingPage extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(13),
                   child: Image.asset(
-                    'assets/greentintborderico.png',
+                    'assets/hervbypd.png',
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => 
                         Icon(Icons.psychology_outlined, color: primaryGreen, size: 30),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 16),     
               
-              const Text(
-                'HerVest AI',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-              ),
+              
               const Text(
                 'Smart Food Business Management',
                 textAlign: TextAlign.center,

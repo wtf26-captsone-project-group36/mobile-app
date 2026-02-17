@@ -26,15 +26,15 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 40), // Reduced from top centering
               // Logo: Reduced to 60x60
               Container(
-                width: 60,
-                height: 60,
+                width: 150,
+                height: 150,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(15),
                   child: Image.asset(
-                    'assets/greentintborderico.png',
+                    'assets/hervbypd.png',
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Icon(Icons.image, color: primaryGreen, size: 36);
@@ -43,15 +43,8 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 16), // Reduced gap
-              // Header: Title reduced to 26
-              const Text(
-                'HerVest AI',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
+       
+             
               const Text(
                 'Smart Food Business Management',
                 textAlign: TextAlign.center,

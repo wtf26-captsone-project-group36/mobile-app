@@ -15,6 +15,118 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _controller;
   late Animation<double> _logoScale;
   late Animation<double> _logoOpacity;
+
+  // Branding Color from your screenshot
+  static const Color brandGreen = Color(0xFF26C485); 
+
+  @override
+  void initState() {
+    super.initState();
+    _setupAnimations();
+    _startBootFlow();
+  }
+
+  void _setupAnimations() {
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1700),    //was 1500
+    );
+
+    _logoScale = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _controller, 
+      curve: Curves.easeOutCubic,
+    ));
+
+    _logoOpacity = Tween<double>(
+      begin: 0.0, 
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _controller, 
+      curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
+    ));
+
+    _controller.forward();
+  }
+
+  Future<void> _startBootFlow() async {
+    const minimumSplashTime = Duration(seconds: 3);
+    final stopwatch = Stopwatch()..start();
+
+    // Perform background initialization here
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    final remainingTime = minimumSplashTime - stopwatch.elapsed;
+    if (remainingTime > Duration.zero) {
+      await Future.delayed(remainingTime);
+    }
+
+    if (!mounted) return;
+    _routeFromSplash();
+  }
+
+  Future<void> _resolveStartupRoute() async {
+    final hasSeenOnboarding = await AppSessionStore.instance.hasSeenOnboarding();
+    final isLoggedIn = await AppSessionStore.instance.isLoggedIn();
+
+    if (!mounted) return;
+
+    if (!hasSeenOnboarding) {
+      context.go('/onboarding-1');
+    } else if (isLoggedIn) {
+      context.go('/dashboard');
+    } else {
+      context.go('/landing');
+    }
+  }
+
+  void _routeFromSplash() => _resolveStartupRoute();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      // Matching the vibrant green background from your image
+      backgroundColor: brandGreen, 
+      body: Center(
+        child: FadeTransition(
+          opacity: _logoOpacity,
+          child: ScaleTransition(
+            scale: _logoScale,
+            // Ensure your logo asset is a transparent PNG 
+            // so the background color flows through it.
+            child: Image.asset(
+              'assets/hervbypd.png', 
+              width: MediaQuery.of(context).size.width * 0.5,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+/*class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _logoScale;
+  late Animation<double> _logoOpacity;
   late Animation<double> _progressOpacity;
 
   @override
@@ -53,7 +165,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     final stopwatch = Stopwatch()..start();
 
-    // 🔮 FUTURE:
+    //FUTURE:
     // await initializeFirebase();
     // await loadUserSession();
     // await warmUpLocalDatabase();
@@ -183,3 +295,4 @@ class _ElegantLoaderState extends State<_ElegantLoader>
     );
   }
 }
+*/

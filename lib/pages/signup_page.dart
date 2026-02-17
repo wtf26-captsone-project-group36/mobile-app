@@ -47,17 +47,18 @@ class _SignUpPageState extends State<SignUpPage> {
 
               // Logo Placeholder replaced with Image
               Container(
-                width: 64,
-                height: 64,
+                width: 100,
+                height: 100,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
+
                   // Border added to match design
                   border: Border.all(color: primaryGreen, width: 2),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: Image.asset(
-                    'assets/greentintborderico.png',
+                    'assets/hervbypd.png',
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Icon(Icons.image, color: primaryGreen, size: 30);
@@ -68,7 +69,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
               const SizedBox(height: 20),
               const Text(
-                'Join HerVest AI',
+                'SIGN UP',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -77,7 +78,7 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Start managing your food business smarter',
+                'To begin your journey with HerVest AI, please fill in the details below:',
                 style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
               const SizedBox(height: 40),
