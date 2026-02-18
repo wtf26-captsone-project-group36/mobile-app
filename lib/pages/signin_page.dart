@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
+import 'package:hervest_ai/widgets/auth_form_field.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -11,11 +12,31 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final Color primaryGreen = const Color(0xFF2E7D32);
+  static const Color kCream = Color(0xFFF5F5DC);
+  static const Color kTextDark = Color(0xFF1A1A1A);
+  static const Color kTextMuted = Color(0xFF6B7280);
+  static const Color kError = Color(0xFFDC2626);
+  static const Color kInputFill = Color(0xFFFFFFFF);
+  static const Color kInputBorder = Color(0xFFD1D5DB);
+
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: kCream,
       body: SafeArea(
         child: SingleChildScrollView(
           // Use ClampingScrollPhysics to prevent the "bouncing" effect on short pages
@@ -43,8 +64,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 16), // Reduced gap
-       
-             
+
               const Text(
                 'Login to get back to managing your business with HerVest AI',
                 textAlign: TextAlign.center,
@@ -55,34 +75,40 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 32), // Reduced from 48
               // Email Field
-              _buildLabel("Email Address"),
-              TextField(
-                decoration: InputDecoration(
-                  hintText: "youremail@example.com",
-                  hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: primaryGreen),
-                  ),
-                ),
+              AuthFormField(
+                label: 'Email Address',
+                controller: _emailController,
+                hintText: 'youremail@example.com',
+                labelColor: kTextDark,
+                textColor: kTextDark,
+                hintColor: kTextMuted,
+                fillColor: kInputFill,
+                borderColor: kInputBorder,
+                focusedBorderColor: primaryGreen,
+                errorColor: kError,
+                focusNode: _emailFocus,
+                keyboardType: TextInputType.emailAddress,
+                autocorrect: false,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
               ),
               const SizedBox(height: 20), // Reduced gap
               // Password Field
-              _buildLabel("Password"),
-              TextField(
+              AuthFormField(
+                label: 'Password',
+                controller: _passwordController,
+                hintText: 'Enter your password',
+                labelColor: kTextDark,
+                textColor: kTextDark,
+                hintColor: kTextMuted,
+                fillColor: kInputFill,
+                borderColor: kInputBorder,
+                focusedBorderColor: primaryGreen,
+                errorColor: kError,
+                focusNode: _passwordFocus,
                 obscureText: true,
-                decoration: InputDecoration(
-                  hintText: "Enter your password",
-                  hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: primaryGreen),
-                  ),
-                ),
+                autocorrect: false,
+                textInputAction: TextInputAction.done,
               ),
               const SizedBox(height: 24), // Reduced from 32
               // Login Button
@@ -175,19 +201,6 @@ class _LoginPageState extends State<LoginPage> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildLabel(String text) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-        ), // Reduced label size
       ),
     );
   }

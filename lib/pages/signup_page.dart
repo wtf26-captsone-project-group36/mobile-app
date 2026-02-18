@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
+import 'package:hervest_ai/widgets/auth_form_field.dart';
 
 void main() => runApp(const MaterialApp(home: SignUpPage()));
 
@@ -13,6 +14,30 @@ class SignUpPage extends StatefulWidget {
 
 class _SignUpPageState extends State<SignUpPage> {
   final Color primaryGreen = const Color(0xFF2E7D32);
+  static const Color kCream = Color(0xFFF5F5DC);
+  static const Color kTextDark = Color(0xFF1A1A1A);
+  static const Color kTextMuted = Color(0xFF6B7280);
+  static const Color kError = Color(0xFFDC2626);
+  static const Color kInputFill = Color(0xFFFFFFFF);
+  static const Color kInputBorder = Color(0xFFD1D5DB);
+
+  final _fullNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _fullNameFocus = FocusNode();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _fullNameFocus.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    super.dispose();
+  }
 
   // List of business types for the dropdown
   final List<String> businessTypes = [
@@ -36,7 +61,7 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: kCream,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -47,7 +72,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
               // Logo Placeholder replaced with Image
               Container(
-                width: 150,                   
+                width: 150,
                 height: 120,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
@@ -84,12 +109,30 @@ class _SignUpPageState extends State<SignUpPage> {
               const SizedBox(height: 40),
 
               // Form Fields
-              _buildInputField("Full Name", "Boss Businessperson"),
-              _buildInputField("Email Address", "yourname@example.com"),
               _buildInputField(
-                "Password",
-                "Minimum 6 characters",
+                label: "Full Name",
+                hint: "Boss Businessperson",
+                controller: _fullNameController,
+                focusNode: _fullNameFocus,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) => _emailFocus.requestFocus(),
+              ),
+              _buildInputField(
+                label: "Email Address",
+                hint: "yourname@example.com",
+                controller: _emailController,
+                focusNode: _emailFocus,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
+              ),
+              _buildInputField(
+                label: "Password",
+                hint: "Minimum 6 characters",
+                controller: _passwordController,
+                focusNode: _passwordFocus,
                 isPassword: true,
+                textInputAction: TextInputAction.done,
               ),
 
               // Populated Dropdowns
@@ -162,35 +205,35 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  Widget _buildInputField(
-    String label,
-    String hint, {
+  Widget _buildInputField({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    FocusNode? focusNode,
+    TextInputType keyboardType = TextInputType.text,
+    TextInputAction? textInputAction,
+    ValueChanged<String>? onFieldSubmitted,
     bool isPassword = false,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            obscureText: isPassword,
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: const TextStyle(color: Colors.grey),
-              enabledBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.grey),
-              ),
-              focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: primaryGreen, width: 2),
-              ),
-            ),
-          ),
-        ],
+      child: AuthFormField(
+        label: label,
+        controller: controller,
+        hintText: hint,
+        labelColor: kTextDark,
+        textColor: kTextDark,
+        hintColor: kTextMuted,
+        fillColor: kInputFill,
+        borderColor: kInputBorder,
+        focusedBorderColor: primaryGreen,
+        errorColor: kError,
+        focusNode: focusNode,
+        keyboardType: keyboardType,
+        obscureText: isPassword,
+        autocorrect: false,
+        textInputAction: textInputAction,
+        onFieldSubmitted: onFieldSubmitted,
       ),
     );
   }

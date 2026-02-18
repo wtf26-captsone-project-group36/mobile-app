@@ -6,6 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
 
+  static const Color kCream = Color(0xFFF5F5DC);
   final Color primaryGreen = const Color(0xFF2E7D32);
   final Color facebookBlue = const Color(0xFF1877F2);
   final Color whatsappGreen = const Color(0xFF25D366);
@@ -13,14 +14,14 @@ class LandingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: kCream,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             children: [
               const SizedBox(height: 60),
-              
+
               // Tightened Logo (60x60)
               Container(
                 width: 180,
@@ -34,20 +35,22 @@ class LandingPage extends StatelessWidget {
                   child: Image.asset(
                     'assets/hervombreforflare.png',
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => 
-                        Icon(Icons.psychology_outlined, color: primaryGreen, size: 30),
+                    errorBuilder: (context, error, stackTrace) => Icon(
+                      Icons.psychology_outlined,
+                      color: primaryGreen,
+                      size: 30,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),     
-              
-              
+              const SizedBox(height: 16),
+
               const Text(
                 'Smart Food Business Management',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 15, color: Colors.blueGrey),
               ),
-              
+
               const SizedBox(height: 60),
 
               // 1. WhatsApp / Phone Option (because SMEs might prefer it)
@@ -79,21 +82,24 @@ class LandingPage extends StatelessWidget {
                 backgroundColor: facebookBlue,
                 onPressed: () {},
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Divider
               Row(
                 children: [
                   Expanded(child: Divider(color: Colors.grey.shade300)),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 10),
-                    child: Text("OR", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    child: Text(
+                      "OR",
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
                   ),
                   Expanded(child: Divider(color: Colors.grey.shade300)),
                 ],
               ),
-              
+
               const SizedBox(height: 32),
 
               // Email-based Auth Links
@@ -102,8 +108,14 @@ class LandingPage extends StatelessWidget {
                 children: [
                   TextButton(
                     onPressed: () => context.go('/login'),
-                    child: Text('Log In', 
-                      style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold, fontSize: 15)),
+                    child: Text(
+                      'Log In',
+                      style: TextStyle(
+                        color: primaryGreen,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
                   ),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 8.0),
@@ -111,14 +123,20 @@ class LandingPage extends StatelessWidget {
                   ),
                   TextButton(
                     onPressed: () => context.push('/signup'),
-                    child: Text('Sign Up', 
-                      style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold, fontSize: 15)),
+                    child: Text(
+                      'Sign Up',
+                      style: TextStyle(
+                        color: primaryGreen,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
                   ),
                 ],
               ),
 
               const SizedBox(height: 20),
-              
+
               // Explore Guest Mode
               TextButton(
                 onPressed: () async {
@@ -126,10 +144,15 @@ class LandingPage extends StatelessWidget {
                   await AppSessionStore.instance.setLoggedIn(false);
                   if (context.mounted) context.go('/dashboard');
                 },
-                child: const Text('Explore as Guest', 
-                    style: TextStyle(color: Colors.black54, decoration: TextDecoration.underline)),
+                child: const Text(
+                  'Explore as Guest',
+                  style: TextStyle(
+                    color: Colors.black54,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
               ),
-              
+
               const SizedBox(height: 40),
             ],
           ),
@@ -153,12 +176,21 @@ class LandingPage extends StatelessWidget {
       child: ElevatedButton.icon(
         onPressed: onPressed,
         icon: FaIcon(icon, color: textColor, size: 20),
-        label: Text(label, style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.w600)),
+        label: Text(
+          label,
+          style: TextStyle(
+            color: textColor,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           elevation: 0,
           side: showBorder ? BorderSide(color: Colors.grey.shade300) : null,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );

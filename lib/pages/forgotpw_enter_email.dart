@@ -16,7 +16,7 @@ class ForgotPasswordEmailScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
-  // ─── Theme Colors ────────────────────────────────────────────────────────
+  // Theme Colors 
   static const Color kCream = Color(0xFFF5F5DC);
   static const Color kDarkGreen = Color(0xFF1A5C3A);
   static const Color kMediumGreen = Color(0xFF2E7D52);
@@ -97,7 +97,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
       // );
     } catch (e) {
       setState(() {
-        // Supabase throws AuthException — check e.message for details
+        // Supabase throws AuthException — the e.message has the details
         _errorMessage =
             'Something went wrong. Please check your email and try again.';
       });
@@ -144,7 +144,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
       backgroundColor: kCream,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 10),
         color: kDarkGreen,
         onPressed: () => context.pop(),
       ),
@@ -155,8 +155,8 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
   Widget _buildLogo() {
     return Center(
       child: Container(
-        width: 96,
-        height: 96,
+        width: 180,
+        height: 150,
         decoration: BoxDecoration(
           color: kMediumGreen,
           borderRadius: BorderRadius.circular(22),
@@ -171,10 +171,10 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(22),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(3),
             // ── Replace with your actual asset ────────────────────────────
-            // child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
-            child: CustomPaint(painter: _HLogoPlaceholderPainter()),
+            child: Image.asset('assets/hervbypd.png', fit: BoxFit.cover),
+            //child: CustomPaint(painter: _HLogoPlaceholderPainter()),
           ),
         ),
       ),
