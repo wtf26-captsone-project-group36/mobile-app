@@ -43,22 +43,22 @@ class _SignUpPageState extends State<SignUpPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 30),
 
               // Logo Placeholder replaced with Image
               Container(
-                width: 100,
-                height: 100,
+                width: 150,                   
+                height: 120,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(15),
 
                   // Border added to match design
                   border: Border.all(color: primaryGreen, width: 2),
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                   child: Image.asset(
-                    'assets/hervbypd.png',
+                    'assets/hervpdwhite.png',
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Icon(Icons.image, color: primaryGreen, size: 30);
@@ -78,7 +78,7 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'To begin your journey with HerVest AI, please fill in the details below:',
+                'To begin your journey with HerVest AI...',
                 style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
               const SizedBox(height: 40),
@@ -108,6 +108,8 @@ class _SignUpPageState extends State<SignUpPage> {
                 height: 55,
                 child: ElevatedButton(
                   onPressed: () async {
+                    // Clear guest mode and mark as logged in
+                    await AppSessionStore.instance.setGuestMode(false);
                     await AppSessionStore.instance.setLoggedIn(true);
                     if (context.mounted) {
                       context.go('/dashboard');

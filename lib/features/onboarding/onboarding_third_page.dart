@@ -1,6 +1,211 @@
 import 'package:flutter/material.dart';
+import 'package:hervest_ai/widgets/onboarding_asset_image.dart';
+import 'package:hervest_ai/widgets/onboarding_indicator.dart';
 
 class OnboardingThirdScreen extends StatelessWidget {
+  final VoidCallback onBack;
+  final VoidCallback onFinish;
+  final VoidCallback? onClose;
+
+  const OnboardingThirdScreen({
+    super.key,
+    required this.onBack,
+    required this.onFinish,
+    this.onClose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          /// Full-bleed bkgd image
+          Positioned.fill(
+            child: const OnboardingAssetImage(
+              assetPath: 'assets/eggsonbo.png',
+              fit: BoxFit.cover,
+              placeholderColor: Colors.black,
+            ),
+          ),
+
+          /// 2. Gradient overlay — transparent at top, dark at bottom
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: const [0.0, 0.45, 0.72, 1.0],
+                  colors: [
+                    Colors.transparent,
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.55),
+                    Colors.black.withValues(alpha: 0.88),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          /// 3. Close button (top right)i
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8, right: 8),
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                  onPressed: onClose ?? onFinish,
+                ),
+              ),
+            ),
+          ),
+
+          /// 4. Bottom content
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    /// Page indicator — white dots on dark bg, left-aligned
+                    /// to match screen 1's indicator style
+                    const OnboardingIndicator(
+                      currentIndex: 2,
+                      total: 3,
+                      activeColor: Colors.white,
+                      inactiveColor: Color(0x66FFFFFF),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    /// Text card with frosted dark background
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 22,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.48),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
+                      ),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Get Smart Alerts',
+                            style: TextStyle(
+                              fontSize: 34,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              height: 1.1,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            'Receive Notification For Items Nearing Expiry And Potential Waste Risks.',
+                            style: TextStyle(
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    /// Navigation buttons — Back (outlined) + Get Started (teal pill)
+                    Row(
+                      children: [
+                        /// Back — mirrors the outlined style from screen 2
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: onBack,
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(
+                                color: Colors.white,
+                                width: 1.5,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(50),
+                              ),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 18),
+                            ),
+                            child: const Text(
+                              'Back',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 14),
+
+                        /// Get Started — teal pill 
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: onFinish,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2A8C68),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(50),
+                              ),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 18),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Get Started',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Icon(Icons.arrow_forward, size: 20),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/*class OnboardingThirdScreen extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onFinish;
   final VoidCallback? onClose;
@@ -245,3 +450,4 @@ class _StepRow extends StatelessWidget {
     );
   }
 }
+*/

@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:hervest_ai/widgets/onboarding_asset_image.dart';
+import 'package:hervest_ai/widgets/onboarding_indicator.dart';
 
 
 class OnboardingFirstScreen extends StatelessWidget {
   final VoidCallback onNext;
   final VoidCallback onClose;
+  final VoidCallback onSkip;
 
   const OnboardingFirstScreen({
     super.key,
     required this.onNext,
     required this.onClose,
+    required this.onSkip,
   });
 
   @override
@@ -23,12 +27,21 @@ class OnboardingFirstScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               /// Close Button
-              Align(
-                alignment: Alignment.topRight,
-                child: IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: onClose,
-                ),
+              Row(
+                children: [
+                  TextButton(
+                    onPressed: onSkip,
+                    child: const Text(
+                      'Skip',
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: onClose,
+                  ),
+                ],
               ),
 
               const SizedBox(height: 20),
@@ -59,6 +72,8 @@ class OnboardingFirstScreen extends StatelessWidget {
               const OnboardingIndicator(
                 currentIndex: 0,
                 total: 3,
+                activeColor: Color(0xFF2A8C68),
+                inactiveColor: Color(0xFFD9D9D9),
               ),
 
               const SizedBox(height: 32),
@@ -67,9 +82,10 @@ class OnboardingFirstScreen extends StatelessWidget {
               SizedBox(
                 height: 270,                                                  // ADJUST
                 width: double.infinity,
-                child: Image.asset(
-                  'assets/onbo_grid.png', 
+                child: const OnboardingAssetImage(
+                  assetPath: 'assets/onbo_grid.png',
                   fit: BoxFit.contain,
+                  placeholderColor: Colors.transparent,
                 ),
               ),
 
@@ -101,64 +117,38 @@ class OnboardingFirstScreen extends StatelessWidget {
 
               /// Next Button
               SizedBox(
-                width: double.infinity,
-                height: 56,
+                width: 220,
                 child: ElevatedButton(
                   onPressed: onNext,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 86, 172, 90),
-                    foregroundColor: Colors.white,                                   //text white
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                    backgroundColor: const Color(0xFF2A8C68),
+                    foregroundColor: Colors.white,
                     elevation: 0,
-                  ),
-                  child: const Text(
-                    "Next",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(50),
                     ),
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Next',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(Icons.arrow_forward, size: 20),
+                    ],
                   ),
                 ),
               ),
 
               const SizedBox(height: 18),               //was 24
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Indicator Widget
-class OnboardingIndicator extends StatelessWidget {
-  final int currentIndex;
-  final int total;
-
-  const OnboardingIndicator({
-    super.key,
-    required this.currentIndex,
-    required this.total,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(
-        total,
-        (index) => AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          margin: const EdgeInsets.symmetric(horizontal: 6),
-          height: 8,
-          width: currentIndex == index ? 20 : 8,
-          decoration: BoxDecoration(
-            color: currentIndex == index
-                ? Colors.green.shade700
-                : Colors.grey.shade300,
-            borderRadius: BorderRadius.circular(20),
           ),
         ),
       ),

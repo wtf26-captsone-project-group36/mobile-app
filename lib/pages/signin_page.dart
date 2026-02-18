@@ -26,10 +26,10 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 40), // Reduced from top centering
               // Logo: Reduced to 60x60
               Container(
-                width: 150,
+                width: 180,
                 height: 150,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(15),
@@ -46,7 +46,7 @@ class _LoginPageState extends State<LoginPage> {
        
              
               const Text(
-                'Smart Food Business Management',
+                'Login to get back to managing your business with HerVest AI',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15,
@@ -91,6 +91,8 @@ class _LoginPageState extends State<LoginPage> {
                 height: 50, // Slightly shorter button
                 child: ElevatedButton(
                   onPressed: () async {
+                    // Clear guest mode and mark as logged in
+                    await AppSessionStore.instance.setGuestMode(false);
                     await AppSessionStore.instance.setLoggedIn(true);
                     if (context.mounted) {
                       context.go('/dashboard');

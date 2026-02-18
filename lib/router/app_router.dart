@@ -1,29 +1,78 @@
-/*
+import 'package:go_router/go_router.dart';
+import 'package:hervest_ai/bottom_navigation/bottom_naviagation.dart';
+import 'package:hervest_ai/core/storage/app_session_store.dart';
+import 'package:hervest_ai/features/onboarding/onboarding_first_page.dart';
+import 'package:hervest_ai/features/onboarding/onboarding_second_page.dart';
+import 'package:hervest_ai/features/onboarding/onboarding_third_page.dart';
+import 'package:hervest_ai/features/onboarding/splash_screen.dart';
+import 'package:hervest_ai/pages/landing_page.dart';
+import 'package:hervest_ai/pages/signin_page.dart';
+import 'package:hervest_ai/pages/signup_page.dart';
 
-final GoRouter router = GoRouter(
-  initialLocation: '/ledger',
+final GoRouter appRouter = GoRouter(
+  initialLocation: '/',
   routes: [
+    GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
     GoRoute(
-      path: '/login',
-      builder: (context, state) => LoginPage(),
+      path: '/onboarding-1',
+      builder: (context, state) => OnboardingFirstScreen(
+        onNext: () => context.go('/onboarding-2'),
+        onSkip: () async {
+          await AppSessionStore.instance.setHasSeenOnboarding(true);
+          final isLoggedIn = await AppSessionStore.instance.isLoggedIn();
+          if (context.mounted) {
+            context.go(isLoggedIn ? '/dashboard' : '/landing');
+          }
+        },
+        onClose: () async {
+          await AppSessionStore.instance.setHasSeenOnboarding(true);
+          final isLoggedIn = await AppSessionStore.instance.isLoggedIn();
+          if (context.mounted) {
+            context.go(isLoggedIn ? '/dashboard' : '/landing');
+          }
+        },
+      ),
     ),
     GoRoute(
-      path: '/ledger',
-      builder: (context, state) => LedgerPage(),
+      path: '/onboarding-2',
+      builder: (context, state) => OnboardingSecondScreen(
+        onNext: () => context.go('/onboarding-3'),
+        onBack: () => context.go('/onboarding-1'),
+        onClose: () async {
+          await AppSessionStore.instance.setHasSeenOnboarding(true);
+          final isLoggedIn = await AppSessionStore.instance.isLoggedIn();
+          if (context.mounted) {
+            context.go(isLoggedIn ? '/dashboard' : '/landing');
+          }
+        },
+      ),
     ),
     GoRoute(
-      path: '/inventory',
-      builder: (context, state) => InventoryPage(),
+      path: '/onboarding-3',
+      builder: (context, state) => OnboardingThirdScreen(
+        onBack: () => context.go('/onboarding-2'),
+        onFinish: () async {
+          await AppSessionStore.instance.setHasSeenOnboarding(true);
+          final isLoggedIn = await AppSessionStore.instance.isLoggedIn();
+          if (context.mounted) {
+            context.go(isLoggedIn ? '/dashboard' : '/landing');
+          }
+        },
+        onClose: () async {
+          await AppSessionStore.instance.setHasSeenOnboarding(true);
+          final isLoggedIn = await AppSessionStore.instance.isLoggedIn();
+          if (context.mounted) {
+            context.go(isLoggedIn ? '/dashboard' : '/landing');
+          }
+        },
+      ),
     ),
+    GoRoute(path: '/landing', builder: (context, state) => const LandingPage()),
+    GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+    GoRoute(path: '/signup', builder: (context, state) => const SignUpPage()),
     GoRoute(
-      path: '/rescue',
-      builder: (context, state) => RescuePage(),
-    ),
-    GoRoute(
-      path: '/insights',
-      builder: (context, state) => InsightsPage(),
+      path: '/dashboard',
+      builder: (context, state) => const MainNavigationScreen(),
     ),
   ],
-); 
-
-*/
+);

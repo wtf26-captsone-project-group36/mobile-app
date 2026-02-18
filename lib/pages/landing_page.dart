@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hervest_ai/core/storage/app_session_store.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LandingPage extends StatelessWidget {
@@ -22,7 +23,7 @@ class LandingPage extends StatelessWidget {
               
               // Tightened Logo (60x60)
               Container(
-                width: 150,
+                width: 180,
                 height: 150,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
@@ -31,7 +32,7 @@ class LandingPage extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(13),
                   child: Image.asset(
-                    'assets/hervbypd.png',
+                    'assets/hervombreforflare.png',
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => 
                         Icon(Icons.psychology_outlined, color: primaryGreen, size: 30),
@@ -49,7 +50,7 @@ class LandingPage extends StatelessWidget {
               
               const SizedBox(height: 60),
 
-              // 1. WhatsApp / Phone Option (High Priority for SMEs)
+              // 1. WhatsApp / Phone Option (because SMEs might prefer it)
               _buildAuthButton(
                 label: "Continue with WhatsApp",
                 icon: FontAwesomeIcons.whatsapp,
@@ -120,7 +121,11 @@ class LandingPage extends StatelessWidget {
               
               // Explore Guest Mode
               TextButton(
-                onPressed: () {},
+                onPressed: () async {
+                  await AppSessionStore.instance.setGuestMode(true);
+                  await AppSessionStore.instance.setLoggedIn(false);
+                  if (context.mounted) context.go('/dashboard');
+                },
                 child: const Text('Explore as Guest', 
                     style: TextStyle(color: Colors.black54, decoration: TextDecoration.underline)),
               ),

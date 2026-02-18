@@ -13,10 +13,15 @@ import 'package:hervest_ai/pages/signup_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // DEV ONLY: Reset onboarding and login flags for testing
-  await AppSessionStore.instance.setHasSeenOnboarding(false);
-  await AppSessionStore.instance.setLoggedIn(false);
   runApp(const SurplusApp());
+}
+
+Future<void> _exitOnboarding(BuildContext context) async {
+  await AppSessionStore.instance.setHasSeenOnboarding(true);
+  final isLoggedIn = await AppSessionStore.instance.isLoggedIn();
+  if (context.mounted) {
+    context.go(isLoggedIn ? '/dashboard' : '/landing');
+  }
 }
 
 class SurplusApp extends StatelessWidget {
@@ -46,12 +51,8 @@ final GoRouter _router = GoRouter(
       path: '/onboarding-1',
       builder: (context, state) => OnboardingFirstScreen(
         onNext: () => context.go('/onboarding-2'),
-        onClose: () async {
-          await AppSessionStore.instance.setHasSeenOnboarding(true);
-          if (context.mounted) {
-            context.go('/landing');
-          }
-        },
+        onSkip: () => _exitOnboarding(context),
+        onClose: () => _exitOnboarding(context),
       ),
     ),
     GoRoute(
@@ -59,30 +60,15 @@ final GoRouter _router = GoRouter(
       builder: (context, state) => OnboardingSecondScreen(
         onNext: () => context.go('/onboarding-3'),
         onBack: () => context.go('/onboarding-1'),
-        onClose: () async {
-          await AppSessionStore.instance.setHasSeenOnboarding(true);
-          if (context.mounted) {
-            context.go('/landing');
-          }
-        },
+        onClose: () => _exitOnboarding(context),
       ),
     ),
     GoRoute(
       path: '/onboarding-3',
       builder: (context, state) => OnboardingThirdScreen(
         onBack: () => context.go('/onboarding-2'),
-        onFinish: () async {
-          await AppSessionStore.instance.setHasSeenOnboarding(true);
-          if (context.mounted) {
-            context.go('/landing');
-          }
-        },
-        onClose: () async {
-          await AppSessionStore.instance.setHasSeenOnboarding(true);
-          if (context.mounted) {
-            context.go('/landing');
-          }
-        },
+        onFinish: () => _exitOnboarding(context),
+        onClose: () => _exitOnboarding(context),
       ),
     ),
     GoRoute(path: '/landing', builder: (context, state) => const LandingPage()),

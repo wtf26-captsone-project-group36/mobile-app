@@ -110,7 +110,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             boxShadow: [
               if (!isSelected)
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 5,
                 )
             ],
@@ -279,7 +279,7 @@ class _LiftOffCardState extends State<LiftOffCard> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           transform: isHovered
-              ? (Matrix4.identity()..translate(0.0, -6.0))
+              ? (Matrix4.identity()..translateByDouble(0.0, -6.0, 0.0, 1.0))
               : Matrix4.identity(),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -287,7 +287,9 @@ class _LiftOffCardState extends State<LiftOffCard> {
             border: Border.all(color: widget.borderColor, width: 2),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(isHovered ? 0.2 : 0.08),
+                color: Colors.black.withValues(
+                  alpha: isHovered ? 0.2 : 0.08,
+                ),
                 blurRadius: isHovered ? 20 : 10,
                 offset: const Offset(0, 8),
               )
