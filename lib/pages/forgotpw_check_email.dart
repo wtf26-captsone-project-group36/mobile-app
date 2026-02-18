@@ -181,7 +181,7 @@ class _CheckEmailScreenState extends State<CheckEmailScreen>
                     color: kTextMuted.withOpacity(0.75),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -191,23 +191,34 @@ class _CheckEmailScreenState extends State<CheckEmailScreen>
   }
 
   Widget _buildIllustration() {
-    return Container(
-      width: 150,
-      height: 150,
-      decoration: BoxDecoration(
-        color: kMediumGreen.withOpacity(0.10),
-        shape: BoxShape.rectangle,
-      ),
-      child: Center(
-        child: Image.asset(
-          'assets/hervbypd.png',
-          width: 180,
-          height: 120,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => Icon(
-            Icons.mark_email_unread_outlined,
-            size: 52,
-            color: kDarkGreen,
+    return Center(
+      child: Container(
+        width: 180,
+        height: 150,
+        decoration: BoxDecoration(
+          color: kMediumGreen,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [
+            BoxShadow(
+              color: kDarkGreen.withOpacity(0.20),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: Padding(
+            padding: const EdgeInsets.all(3),
+            child: Image.asset(
+              'assets/hervbypd.png',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Icon(
+                Icons.mark_email_unread_outlined,
+                size: 60,
+                color: kDarkGreen,
+              ),
+            ),
           ),
         ),
       ),

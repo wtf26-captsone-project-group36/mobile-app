@@ -20,7 +20,7 @@ class ResetPasswordScreen extends StatefulWidget {
 }
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
-  // ─── Theme Colors ─────────────────────────────────────────────────────────
+  // ─── Theme Colors
   static const Color kCream = Color(0xFFF5F5DC);
   static const Color kDarkGreen = Color(0xFF1A5C3A);
   static const Color kMediumGreen = Color(0xFF2E7D52);
@@ -32,7 +32,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   static const Color kInputFill = Color(0xFFFFFFFF);
   static const Color kInputBorder = Color(0xFFD1D5DB);
 
-  // ─── State ────────────────────────────────────────────────────────────────
+  // ─── State
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
@@ -44,7 +44,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   bool _obscureConfirm = true;
   String? _errorMessage;
 
-  // ─── Password strength ────────────────────────────────────────────────────
+  // ─── Password strength
   double _strengthScore = 0;
   String _strengthLabel = '';
   Color _strengthColor = Colors.transparent;
@@ -65,7 +65,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     super.dispose();
   }
 
-  // ─── Password Strength Evaluator ──────────────────────────────────────────
+  // ─── Password Strength Evaluator
   void _evaluateStrength() {
     final password = _passwordController.text;
     int score = 0;
@@ -94,7 +94,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     });
   }
 
-  // ─── Validation ───────────────────────────────────────────────────────────
+  // ─── Validation
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter a new password';
@@ -121,7 +121,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     return null;
   }
 
-  // ─── Submit ───────────────────────────────────────────────────────────────
+  // ─── Submit
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -131,7 +131,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     });
 
     try {
-      // ── SUPABASE INTEGRATION ─────────────────────────────────────────────
+      // ── SUPABASE INTEGRATION ──
       // Supabase session is already set from the verifyOTP call on Screen 3.
       // Simply update the user's password:
       //
@@ -143,11 +143,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       //
       // After success, sign the user out so they log in fresh:
       // await Supabase.instance.client.auth.signOut();
-      // ─────────────────────────────────────────────────────────────────────
+      // ──
 
-      // ── MOCK DELAY (remove when Supabase is wired up) ────────────────────
+      // ── MOCK DELAY (remove when Supabase is wired up) ─
       await Future.delayed(const Duration(milliseconds: 1400));
-      // ─────────────────────────────────────────────────────────────────────
+      // ──
 
       if (!mounted) return;
       _showSuccessSheet();
@@ -161,7 +161,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     }
   }
 
-  // ─── Success Bottom Sheet ─────────────────────────────────────────────────
+  // ─── Success Bottom Sheet
   void _showSuccessSheet() {
     showModalBottomSheet(
       context: context,
@@ -171,7 +171,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       builder: (_) => _SuccessBottomSheet(
         onGoToLogin: () {
           context.go('/login');
-          // ── OR navigate to named login route: ─────────────────────────────
+          // ── OR navigate to named login route: ──
           // Navigator.pushNamedAndRemoveUntil(
           //   context, '/login', (route) => false,
           // );
@@ -180,7 +180,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  // ─── Build ────────────────────────────────────────────────────────────────
+  // ─── Build
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -194,9 +194,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             children: [
               const SizedBox(height: 32),
               _buildLogo(),
-              const SizedBox(height: 36),
+              const SizedBox(height: 30),
               _buildHeading(),
-              const SizedBox(height: 36),
+              const SizedBox(height: 32),
               _buildForm(),
               const SizedBox(height: 12),
               if (_strengthLabel.isNotEmpty) _buildStrengthIndicator(),
@@ -214,28 +214,28 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  // ─── App Bar ──────────────────────────────────────────────────────────────
+  // ─── App Bar
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: kCream,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 15),
         color: kDarkGreen,
         onPressed: () => context.pop(),
       ),
     );
   }
 
-  // ─── Logo ─────────────────────────────────────────────────────────────────
+  // ─── Logo
   Widget _buildLogo() {
     return Center(
       child: Container(
-        width: 88,
-        height: 88,
+        width: 180,
+        height: 150,
         decoration: BoxDecoration(
           color: kMediumGreen,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
               color: kDarkGreen.withOpacity(0.20),
@@ -245,22 +245,18 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
           child: Padding(
-            padding: const EdgeInsets.all(12),
-            // ── REPLACE with your actual logo asset ───────────────────────
-            // child: Image.asset(
-            //   'assets/images/logo.png',
-            //   fit: BoxFit.contain,
-            // ),
-            child: CustomPaint(painter: _HLogoPlaceholderPainter()),
+            padding: const EdgeInsets.all(3),
+            // ── REPLACE with your actual logo asset
+            child: Image.asset('assets/hervbypd.png', fit: BoxFit.cover),
+            //child: CustomPaint(painter: _HLogoPlaceholderPainter()),
           ),
         ),
       ),
     );
   }
 
-  // ─── Heading ──────────────────────────────────────────────────────────────
   Widget _buildHeading() {
     return Column(
       children: [

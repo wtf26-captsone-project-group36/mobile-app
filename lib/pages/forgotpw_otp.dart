@@ -11,10 +11,7 @@ import 'package:go_router/go_router.dart';
 class EnterCodeScreen extends StatefulWidget {
   final String email;
 
-  const EnterCodeScreen({
-    super.key,
-    required this.email,
-  });
+  const EnterCodeScreen({super.key, required this.email});
 
   @override
   State<EnterCodeScreen> createState() => _EnterCodeScreenState();
@@ -36,10 +33,14 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
   static const int kOtpLength = 6;
 
   // ─── State ────────────────────────────────────────────────────────────────
-  final List<TextEditingController> _controllers =
-      List.generate(kOtpLength, (_) => TextEditingController());
-  final List<FocusNode> _focusNodes =
-      List.generate(kOtpLength, (_) => FocusNode());
+  final List<TextEditingController> _controllers = List.generate(
+    kOtpLength,
+    (_) => TextEditingController(),
+  );
+  final List<FocusNode> _focusNodes = List.generate(
+    kOtpLength,
+    (_) => FocusNode(),
+  );
 
   bool _isVerifying = false;
   bool _hasError = false;
@@ -84,8 +85,7 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
   }
 
   // ─── Get full OTP string ──────────────────────────────────────────────────
-  String get _otpValue =>
-      _controllers.map((c) => c.text).join();
+  String get _otpValue => _controllers.map((c) => c.text).join();
 
   bool get _isComplete => _otpValue.length == kOtpLength;
 
@@ -318,45 +318,28 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
   Widget _buildIllustration() {
     return Center(
       child: Container(
-        width: 120,
-        height: 120,
+        width: 180,
+        height: 150,
         decoration: BoxDecoration(
-          color: kMediumGreen.withOpacity(0.10),
-          shape: BoxShape.circle,
-        ),
-        child: Center(
-          // ── REPLACE with your actual illustration asset ──────────────────
-          // child: Image.asset(
-          //   'assets/images/otp_illustration.png',
-          //   width: 90,
-          //   height: 90,
-          //   fit: BoxFit.contain,
-          // ),
-          //
-          // ── PLACEHOLDER ─────────────────────────────────────────────────
-          child: Container(
-            width: 90,
-            height: 90,
-            decoration: BoxDecoration(
-              color: kMediumGreen.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(14),
+          color: kMediumGreen,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [
+            BoxShadow(
+              color: kDarkGreen.withOpacity(0.20),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.lock_outline_rounded,
-                    size: 40, color: kDarkGreen),
-                const SizedBox(height: 4),
-                Text(
-                  'IMG',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: kTextMuted,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ],
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: Padding(
+            padding: const EdgeInsets.all(3),
+            child: Image.asset(
+              'assets/hervbypd.png',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+                  Icon(Icons.lock_outline_rounded, size: 60, color: kDarkGreen),
             ),
           ),
         ),
@@ -364,7 +347,6 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
     );
   }
 
-  // ─── Heading ──────────────────────────────────────────────────────────────
   Widget _buildHeading() {
     return Column(
       children: [
@@ -382,11 +364,7 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
         RichText(
           textAlign: TextAlign.center,
           text: TextSpan(
-            style: TextStyle(
-              fontSize: 14,
-              height: 1.65,
-              color: kTextMuted,
-            ),
+            style: TextStyle(fontSize: 14, height: 1.65, color: kTextMuted),
             children: [
               const TextSpan(text: 'Enter the 6-digit OTP code sent to\n'),
               TextSpan(
@@ -410,20 +388,14 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
       builder: (context, child) {
         final dx = _hasError
             ? 8 *
-                (0.5 - (_shakeAnimation.value - 0.5).abs()) *
-                (_shakeAnimation.value < 0.5 ? -1 : 1)
+                  (0.5 - (_shakeAnimation.value - 0.5).abs()) *
+                  (_shakeAnimation.value < 0.5 ? -1 : 1)
             : 0.0;
-        return Transform.translate(
-          offset: Offset(dx * 6, 0),
-          child: child,
-        );
+        return Transform.translate(offset: Offset(dx * 6, 0), child: child);
       },
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: List.generate(
-          kOtpLength,
-          (index) => _buildOtpBox(index),
-        ),
+        children: List.generate(kOtpLength, (index) => _buildOtpBox(index)),
       ),
     );
   }
@@ -465,9 +437,7 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
           decoration: InputDecoration(
             counterText: '',
             filled: true,
-            fillColor: isFilled
-                ? kDarkGreen.withOpacity(0.04)
-                : kInputFill,
+            fillColor: isFilled ? kDarkGreen.withOpacity(0.04) : kInputFill,
             contentPadding: EdgeInsets.zero,
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -535,8 +505,7 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
                 height: 22,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
             : const Text(
@@ -568,8 +537,7 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
                 height: 14,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(kMediumGreen),
+                  valueColor: AlwaysStoppedAnimation<Color>(kMediumGreen),
                 ),
               )
             : GestureDetector(

@@ -50,16 +50,27 @@ class _LoginPageState extends State<LoginPage> {
                 width: 180,
                 height: 150,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
+                  color: primaryGreen,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryGreen.withOpacity(0.20),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(15),
-                  child: Image.asset(
-                    'assets/hervbypd.png',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(Icons.image, color: primaryGreen, size: 36);
-                    },
+                  borderRadius: BorderRadius.circular(22),
+                  child: Padding(
+                    padding: const EdgeInsets.all(3),
+                    child: Image.asset(
+                      'assets/hervbypd.png',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(Icons.image, color: primaryGreen, size: 36);
+                      },
+                    ),
                   ),
                 ),
               ),
