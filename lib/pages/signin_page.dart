@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
+import 'package:hervest_ai/provider/app_state_controller_mock.dart';
+import 'package:hervest_ai/provider/profile_controller.dart';
 import 'package:hervest_ai/widgets/auth_form_field.dart';
 
 class LoginPage extends StatefulWidget {
@@ -128,10 +131,37 @@ class _LoginPageState extends State<LoginPage> {
                 height: 50, // Slightly shorter button
                 child: ElevatedButton(
                   onPressed: () async {
+                    final profile = context.read<ProfileController>();
+                    await profile.load();
+
                     // Clear guest mode and mark as logged in
                     await AppSessionStore.instance.setGuestMode(false);
                     await AppSessionStore.instance.setLoggedIn(true);
+
+                    // Update stored email for profile
+                    await profile.updateProfile(
+                      fullName: profile.fullName,
+                      email: _emailController.text.trim(),
+                      phone: profile.phone,
+                      businessName: profile.businessName,
+                      role: profile.role,
+                      businessType: profile.businessType,
+                      location: profile.location,
+                    );
+
                     if (context.mounted) {
+                      final appState = Provider.of<AppStateController>(context, listen: false);
+                      final savedName = profile.fullName.trim();
+                      if (savedName.isNotEmpty) {
+                        appState.setUserName(savedName);
+                      } else {
+                        final email = _emailController.text.trim();
+                        final nameFromEmail = email.split('@')[0];
+                        appState.setUserName(
+                          nameFromEmail.isNotEmpty ? nameFromEmail : 'User',
+                        );
+                      }
+                      
                       context.go('/dashboard');
                     }
                   },

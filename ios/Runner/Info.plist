@@ -45,7 +45,9 @@
 		<true/>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
-		<key>UIStatusBarHidden</key>
-		<false/>
+	<key>UIStatusBarHidden</key>
+	<false/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Allow access to your photos to select a profile picture.</string>
 	</dict>
 </plist>

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:hervest_ai/provider/app_state_controller_mock.dart';
 
 class TransactionHistoryPage extends StatelessWidget {
   const TransactionHistoryPage({super.key});
@@ -18,60 +20,44 @@ class TransactionHistoryPage extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
           onPressed: () => context.pop(),
         ),
-        title: const Text("Transaction", 
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Transactions",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.tune, color: Colors.black), // Filter icon
-            onPressed: () {}, 
+            icon: const Icon(Icons.tune, color: Colors.black),
+            onPressed: () {},
           ),
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10),
-              child: Text(
-                "All income and expenses",
-                style: TextStyle(color: Colors.black.withOpacity(0.6), fontSize: 14),
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                children: [
-                  _buildDateSection("Today, Feb 21"),
-                  _buildTransactionItem(
-                    label: "Bank Transfer",
-                    sub: "Fresh product purchase",
-                    amount: "₦ 10,000",
-                    isIncome: true,
-                  ),
-                  _buildTransactionItem(
-                    label: "Inventory Purchase",
-                    sub: "Invoice #12345",
-                    amount: "₦ 30,000",
-                    isIncome: false,
-                  ),
-                  const SizedBox(height: 20),
-                  _buildDateSection("Thursday, Jan 12"),
-                  _buildTransactionItem(
-                    label: "Electricity",
-                    sub: "Utilities",
-                    amount: "₦ 10,000",
-                    isIncome: false,
-                  ),
-                  _buildTransactionItem(
-                    label: "Rent",
-                    sub: "Monthly Office",
-                    amount: "₦ 120,000",
-                    isIncome: false,
-                  ),
-                ],
-              ),
-            ),
-          ],
+        child: Consumer<AppStateController>(
+          builder: (context, state, child) {
+            final transactions = state.transactions;
+            if (transactions.isEmpty) {
+              return const Center(
+                child: Text(
+                  "No transactions yet.",
+                  style: TextStyle(color: Colors.black54),
+                ),
+              );
+            }
+
+            final grouped = _groupByDate(transactions);
+            return ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              children: grouped.entries.expand((entry) {
+                final date = entry.key;
+                final items = entry.value;
+                return [
+                  _buildDateSection(date),
+                  ...items.map(_buildTransactionItem).toList(),
+                  const SizedBox(height: 12),
+                ];
+              }).toList(),
+            );
+          },
         ),
       ),
     );
@@ -87,12 +73,8 @@ class TransactionHistoryPage extends StatelessWidget {
     );
   }
 
-  Widget _buildTransactionItem({
-    required String label,
-    required String sub,
-    required String amount,
-    required bool isIncome,
-  }) {
+  Widget _buildTransactionItem(Map<String, dynamic> t) {
+    final isIncome = (t['type'] as String).toLowerCase() == 'income';
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -116,17 +98,29 @@ class TransactionHistoryPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(sub, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(t['title'] as String, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(t['type'] as String, style: const TextStyle(fontSize: 12, color: Colors.grey)),
               ],
             ),
           ),
           Text(
-            amount,
+            t['amount'] as String,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ],
       ),
     );
+  }
+
+  Map<String, List<Map<String, dynamic>>> _groupByDate(
+    List<Map<String, dynamic>> transactions,
+  ) {
+    final Map<String, List<Map<String, dynamic>>> grouped = {};
+    for (final t in transactions) {
+      final date = (t['date'] as String?) ?? 'Unknown date';
+      grouped.putIfAbsent(date, () => []);
+      grouped[date]!.add(t);
+    }
+    return grouped;
   }
 }

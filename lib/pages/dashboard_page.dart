@@ -428,7 +428,6 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int selectedTab = 0;
-  final String userName = "Anna"; 
 
   final Color primaryGreen = const Color(0xFF006B4D);
   final Color backgroundCream = const Color(0xFFFDFBF7);
@@ -484,36 +483,107 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildProfileRow() {
+  Widget _buildProfileRow(String name) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    
+    // Responsive logo size
+    final logoWidth = isMobile ? 45.0 : 55.0;
+    final logoHeight = isMobile ? 35.0 : 42.0;
+    final nameFontSize = isMobile ? 20.0 : 26.0;
+    final welcomeFontSize = isMobile ? 12.0 : 14.0;
+    final spacing = isMobile ? 12.0 : 16.0;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Welcome back,",
-                style: TextStyle(color: Colors.black.withOpacity(0.5), fontSize: 14)),
-            Text(userName,
-                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-          ],
+        // Logo and Text Section (Side by Side)
+        Flexible(
+          child: Row(
+            children: [
+              // HerVest AI Logo
+              Container(
+                width: logoWidth,
+                height: logoHeight,
+                decoration: BoxDecoration(
+                  color: primaryGreen,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryGreen.withOpacity(0.15),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(2),
+                    child: Image.asset(
+                      'assets/hervbypd.png',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(Icons.image, color: Colors.white, size: isMobile ? 16 : 20);
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: spacing),
+              // Welcome Text
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Welcome back,",
+                      style: TextStyle(
+                        color: Colors.black.withOpacity(0.5),
+                        fontSize: welcomeFontSize,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: isMobile ? 4 : 6),
+                    Text(
+                      name,
+                      style: TextStyle(
+                        fontSize: nameFontSize,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        _buildAvatar(),
+        SizedBox(width: spacing),
+        // Avatar Section
+        _buildAvatar(name),
       ],
     );
   }
 
-  Widget _buildAvatar() {
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: primaryGreen.withOpacity(0.2), width: 2),
-      ),
-      child: CircleAvatar(
-        radius: 26,
-        backgroundColor: primaryGreen,
-        child: Text(
-          userName[0].toUpperCase(),
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+  Widget _buildAvatar(String name) {
+    return GestureDetector(
+      onTap: () => context.push('/profile'),
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: primaryGreen.withOpacity(0.2), width: 2),
+        ),
+        child: CircleAvatar(
+          radius: 26,
+          backgroundColor: primaryGreen,
+          child: Text(
+            name.isNotEmpty ? name[0].toUpperCase() : "U",
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+          ),
         ),
       ),
     );

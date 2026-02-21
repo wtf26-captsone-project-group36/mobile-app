@@ -6,6 +6,7 @@ import 'package:hervest_ai/router/app_router.dart';
 
 // Import your Providers/Logic Controllers
 import 'package:hervest_ai/provider/inventory_provider.dart'; 
+import 'package:hervest_ai/provider/profile_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +19,9 @@ void main() async {
         
         // Manages Global Search, User Profile, & Cashflow Data
         ChangeNotifierProvider(create: (_) => AppStateController()),
+
+        // Manages Profile data (name, contact, business, avatar)
+        ChangeNotifierProvider(create: (_) => ProfileController()),
       ],
       child: const SurplusApp(),
     ),

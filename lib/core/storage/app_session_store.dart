@@ -8,6 +8,7 @@ class AppSessionStore {
   static const String _hasSeenOnboardingKey = 'has_seen_onboarding';
   static const String _isLoggedInKey = 'is_logged_in';
   static const String _isGuestKey = 'is_guest';
+  static const String _userNameKey = 'user_name';
 
   Future<bool> hasSeenOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
@@ -37,5 +38,20 @@ class AppSessionStore {
   Future<bool> isGuest() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_isGuestKey) ?? false;
+  }
+
+  Future<String?> getUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userNameKey);
+  }
+
+  Future<void> setUserName(String userName) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userNameKey, userName);
+  }
+
+  Future<void> clearUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_userNameKey);
   }
 }

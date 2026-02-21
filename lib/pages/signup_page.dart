@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
+import 'package:hervest_ai/provider/app_state_controller_mock.dart';
+import 'package:hervest_ai/provider/profile_controller.dart';
 import 'package:hervest_ai/widgets/auth_form_field.dart';
 
 void main() => runApp(const MaterialApp(home: SignUpPage()));
@@ -27,6 +30,8 @@ class _SignUpPageState extends State<SignUpPage> {
   final _fullNameFocus = FocusNode();
   final _emailFocus = FocusNode();
   final _passwordFocus = FocusNode();
+  String _selectedBusinessType = '';
+  String _selectedRole = '';
 
   @override
   void dispose() {
@@ -140,8 +145,14 @@ class _SignUpPageState extends State<SignUpPage> {
                 "Business Type",
                 "Select business type",
                 businessTypes,
+                (val) => setState(() => _selectedBusinessType = val ?? ''),
               ),
-              _buildDropdownField("Your Role", "Select your role", roles),
+              _buildDropdownField(
+                "Your Role",
+                "Select your role",
+                roles,
+                (val) => setState(() => _selectedRole = val ?? ''),
+              ),
 
               const SizedBox(height: 30),
 
@@ -151,10 +162,33 @@ class _SignUpPageState extends State<SignUpPage> {
                 height: 55,
                 child: ElevatedButton(
                   onPressed: () async {
-                    // Clear guest mode and mark as logged in
-                    await AppSessionStore.instance.setGuestMode(false);
-                    await AppSessionStore.instance.setLoggedIn(true);
+                    final fullName = _fullNameController.text.trim();
+                    if (fullName.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter your full name')),
+                      );
+                      return;
+                    }
+                    
+                    // Store user name and update provider
+                    await AppSessionStore.instance.setUserName(fullName);
                     if (context.mounted) {
+                      final appState = Provider.of<AppStateController>(context, listen: false);
+                      final profile = Provider.of<ProfileController>(context, listen: false);
+                      await profile.updateProfile(
+                        fullName: fullName,
+                        email: _emailController.text.trim(),
+                        phone: profile.phone,
+                        businessName: profile.businessName,
+                        role: _selectedRole.trim(),
+                        businessType: _selectedBusinessType.trim(),
+                        location: profile.location,
+                      );
+                      appState.setUserName(fullName);
+                      
+                      // Clear guest mode and mark as logged in
+                      await AppSessionStore.instance.setGuestMode(false);
+                      await AppSessionStore.instance.setLoggedIn(true);
                       context.go('/dashboard');
                     }
                   },
@@ -238,7 +272,12 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  Widget _buildDropdownField(String label, String hint, List<String> items) {
+  Widget _buildDropdownField(
+    String label,
+    String hint,
+    List<String> items,
+    ValueChanged<String?> onChanged,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Column(
@@ -261,7 +300,7 @@ class _SignUpPageState extends State<SignUpPage> {
             items: items.map((String value) {
               return DropdownMenuItem<String>(value: value, child: Text(value));
             }).toList(),
-            onChanged: (newValue) {},
+            onChanged: onChanged,
           ),
         ],
       ),
