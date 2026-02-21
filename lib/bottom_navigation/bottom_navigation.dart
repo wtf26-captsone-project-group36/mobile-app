@@ -1,41 +1,43 @@
+import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:hervest_ai/core/storage/app_session_store.dart';
 import 'package:go_router/go_router.dart';
-
-import '../pages/dashboard_page.dart';
-import 'inventory_screen.dart';
-import 'cashflow_screen.dart';
-import 'suggestions_screen.dart';
-import 'profile_screen.dart';
+import 'package:hervest_ai/core/storage/app_session_store.dart';
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  const MainNavigationScreen({
+    super.key,
+    required this.navigationShell,
+  });
+
+  final StatefulNavigationShell navigationShell;
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int _currentIndex = 0;
   bool _isGuest = false;
   bool _bannerVisible = true;
 
-  final List<Widget> _pages = [
-    DashboardScreen(),
-    InventoryPageOne(),
-    CashflowScreen(),
-    SuggestionsScreen(),
-    ProfilePage(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    AppSessionStore.instance.isGuest().then((value) {
+      if (mounted) setState(() => _isGuest = value);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final currentIndex = widget.navigationShell.currentIndex;
     return Scaffold(
       body: Column(
         children: [
           if (_isGuest && _bannerVisible)
             MaterialBanner(
-              content: const Text("You're exploring as a guest — create an account to save your data."),
+              content: const Text(
+                "You're exploring as a guest -- create an account to save your data.",
+              ),
               leading: const Icon(Icons.person_outline),
               actions: [
                 TextButton(
@@ -49,35 +51,34 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               ],
             ),
           Expanded(
-            child: IndexedStack(
-              index: _currentIndex,
-              children: _pages,
-            ),
+            child: widget.navigationShell,
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.green.shade700,
-        unselectedItemColor: Colors.black54,
-        onTap: (index) => setState(() => _currentIndex = index),
+      bottomNavigationBar: ConvexAppBar(
+        style: TabStyle.reactCircle,
+        backgroundColor: const Color(0xFFFDFBF7),
+        activeColor: const Color(0xFF2A8C68),
+        color: Colors.black54,
+        height: 56,
+        elevation: 6,
+        curveSize: 85,
+        top: -14,
+        initialActiveIndex: currentIndex,
+        onTap: (index) {
+          widget.navigationShell.goBranch(
+            index,
+            initialLocation: index == currentIndex,
+          );
+        },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.inventory_2), label: 'Inventory'),
-          BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: 'Finances'),
-          BottomNavigationBarItem(icon: Icon(Icons.lightbulb_outline), label: 'Suggestions'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+          TabItem(icon: Icons.home, title: 'Home'),
+          TabItem(icon: Icons.inventory_2, title: 'Inventory'),
+          TabItem(icon: Icons.attach_money, title: 'Finances'),
+          TabItem(icon: Icons.lightbulb_outline, title: 'Ideas'),
+          TabItem(icon: Icons.person_outline, title: 'Profile'),
         ],
       ),
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    AppSessionStore.instance.isGuest().then((value) {
-      if (mounted) setState(() => _isGuest = value);
-    });
   }
 }

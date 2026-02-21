@@ -21,9 +21,9 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
           children: [
             _buildSearchHeader(context),
             Expanded(
-              child: _searchController.text.isEmpty 
-                ? _buildRecentSearches() 
-                : _buildSearchResults(),
+              child: _searchController.text.isEmpty
+                  ? _buildRecentSearches()
+                  : _buildSearchResults(),
             ),
           ],
         ),
@@ -47,7 +47,10 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                  ),
                 ],
               ),
               child: TextField(
@@ -72,13 +75,18 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       children: [
-        const Text("Recent Searches", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+        const Text(
+          "Recent Searches",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+        ),
         const SizedBox(height: 12),
-        ...history.map((item) => ListTile(
-          leading: const Icon(Icons.history, size: 18),
-          title: Text(item),
-          onTap: () => _searchController.text = item,
-        )),
+        ...history.map(
+          (item) => ListTile(
+            leading: const Icon(Icons.history, size: 18),
+            title: Text(item),
+            onTap: () => _searchController.text = item,
+          ),
+        ),
       ],
     );
   }
@@ -88,10 +96,20 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       children: [
         _resultCategory("Inventory Items"),
-        _resultItem("Golden Penny Beans", "Grains • 20 Units", Icons.inventory_2_outlined, '/inventory'),
+        _resultItem(
+          "Golden Penny Beans",
+          "Grains • 20 Units",
+          Icons.inventory_2_outlined,
+          '/inventory',
+        ),
         const SizedBox(height: 20),
         _resultCategory("Financial Transactions"),
-        _resultItem("Electricity Payment", "Expense • ₦10,000", Icons.bolt, '/transactions'),
+        _resultItem(
+          "Electricity Payment",
+          "Expense • ₦10,000",
+          Icons.bolt,
+          '/cashflow/transactions',
+        ),
       ],
     );
   }
@@ -99,14 +117,24 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
   Widget _resultCategory(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black54)),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+          color: Colors.black54,
+        ),
+      ),
     );
   }
 
   Widget _resultItem(String title, String sub, IconData icon, String route) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(backgroundColor: Colors.grey.shade100, child: Icon(icon, color: primaryGreen, size: 18)),
+      leading: CircleAvatar(
+        backgroundColor: Colors.grey.shade100,
+        child: Icon(icon, color: primaryGreen, size: 18),
+      ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Text(sub),
       trailing: const Icon(Icons.chevron_right, size: 16),

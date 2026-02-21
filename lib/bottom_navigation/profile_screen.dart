@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hervest_ai/provider/app_state_controller_mock.dart';
 import 'package:provider/provider.dart';
+import 'package:hervest_ai/widgets/app_input_styles.dart';
 
 
 class ProfilePage extends StatelessWidget {
@@ -177,7 +178,9 @@ class ProfilePage extends StatelessWidget {
           children: [
             const Text("Edit Profile", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
-            TextField(decoration: InputDecoration(labelText: "Full Name", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+            TextField(
+              decoration: AppInputStyles.decoration(labelText: "Full Name"),
+            ),
             const SizedBox(height: 20),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: primaryGreen, minimumSize: const Size(double.infinity, 50)),

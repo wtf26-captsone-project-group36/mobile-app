@@ -164,7 +164,10 @@ class CashflowOverviewPage extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         const Text("Recent Transactions", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        TextButton(onPressed: () => context.push('/transactions'), child: const Text("View all")),
+        TextButton(
+          onPressed: () => context.push('/cashflow/transactions'),
+          child: const Text("View all"),
+        ),
       ],
     );
   }

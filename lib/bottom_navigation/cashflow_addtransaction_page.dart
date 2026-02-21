@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hervest_ai/widgets/app_input_styles.dart';
 
 class AddTransactionPage extends StatelessWidget {
   final bool isExpense;
@@ -28,11 +29,16 @@ class AddTransactionPage extends StatelessWidget {
   }
 
   Widget _buildAmountInput() {
-    return const TextField(decoration: InputDecoration(labelText: 'Amount'));
+    return TextField(
+      decoration: AppInputStyles.decoration(labelText: 'Amount'),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+    );
   }
 
   Widget _buildTextField(String label, String hint) {
-    return TextField(decoration: InputDecoration(labelText: label, hintText: hint));
+    return TextField(
+      decoration: AppInputStyles.decoration(labelText: label, hintText: hint),
+    );
   }
 
   Widget _buildSubmitButton(BuildContext context) {

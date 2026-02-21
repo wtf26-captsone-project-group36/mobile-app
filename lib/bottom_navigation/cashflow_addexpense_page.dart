@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hervest_ai/widgets/app_input_styles.dart';
 
 class AddExpensePage extends StatefulWidget {
   const AddExpensePage({super.key});
@@ -32,46 +33,52 @@ class _AddExpensePageState extends State<AddExpensePage> {
         ],
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 10),
               const Center(
-                child: Text("Record a new business expense.", 
-                  style: TextStyle(color: Colors.black54, fontSize: 14)),
+                child: Text(
+                  "Record a new business expense.",
+                  style: TextStyle(color: Colors.black54, fontSize: 14),
+                ),
               ),
               const SizedBox(height: 30),
-              
+
               // 1. Hero Amount Input
               _buildHeroAmountInput(),
-              
+
               const SizedBox(height: 32),
-              
+
               // 2. Form Fields
               _buildLabel("Amount"),
               _buildTextField("Enter amount", "Must be greater than 0."),
-              
+
               const SizedBox(height: 20),
               _buildLabel("Category"),
               _buildDropdownField("Select a category", "Must be greater than 0."),
-              
+
               const SizedBox(height: 20),
               _buildLabel("Date"),
-              _buildTextField("Today", "Select when this expense occurred.", suffixIcon: Icons.calendar_today_outlined),
-              
+              _buildTextField(
+                "Today",
+                "Select when this expense occurred.",
+                suffixIcon: Icons.calendar_today_outlined,
+              ),
+
               const SizedBox(height: 20),
               _buildLabel("Description"),
               _buildTextField("Add details about this expense", null, maxLines: 3),
-              
+
               const SizedBox(height: 24),
-              
+
               // 3. File Upload Button
               _buildUploadButton(),
-              
-              const Spacer(),
-              
+
+              const SizedBox(height: 32),
+
               // 4. Save Button
               _buildSaveButton(),
               const SizedBox(height: 20),
@@ -103,7 +110,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(text, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+      child: Text(text, style: AppInputStyles.labelStyle),
     );
   }
 
@@ -113,14 +120,11 @@ class _AddExpensePageState extends State<AddExpensePage> {
       children: [
         TextField(
           maxLines: maxLines,
-          decoration: InputDecoration(
+          decoration: AppInputStyles.decoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-            filled: true,
-            fillColor: Colors.grey.shade100,
-            suffixIcon: suffixIcon != null ? Icon(suffixIcon, size: 18, color: Colors.grey) : null,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            suffixIcon: suffixIcon != null
+                ? Icon(suffixIcon, size: 18, color: AppInputStyles.textMuted)
+                : null,
           ),
         ),
         if (helper != null)
@@ -136,15 +140,11 @@ class _AddExpensePageState extends State<AddExpensePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(hint, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-              const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-            ],
+        TextField(
+          readOnly: true,
+          decoration: AppInputStyles.decoration(
+            hintText: hint,
+            suffixIcon: const Icon(Icons.keyboard_arrow_down, color: AppInputStyles.textMuted),
           ),
         ),
         Padding(

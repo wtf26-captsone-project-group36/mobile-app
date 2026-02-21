@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hervest_ai/widgets/app_input_styles.dart';
 
 class AddIncomePage extends StatefulWidget {
   const AddIncomePage({super.key});
@@ -95,7 +96,7 @@ class _AddIncomePageState extends State<AddIncomePage> {
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(text, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+      child: Text(text, style: AppInputStyles.labelStyle),
     );
   }
 
@@ -105,14 +106,11 @@ class _AddIncomePageState extends State<AddIncomePage> {
       children: [
         TextField(
           maxLines: maxLines,
-          decoration: InputDecoration(
+          decoration: AppInputStyles.decoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-            filled: true,
-            fillColor: Colors.grey.shade100,
-            suffixIcon: suffixIcon != null ? Icon(suffixIcon, size: 18, color: Colors.grey) : null,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            suffixIcon: suffixIcon != null
+                ? Icon(suffixIcon, size: 18, color: AppInputStyles.textMuted)
+                : null,
           ),
         ),
         if (helper != null)

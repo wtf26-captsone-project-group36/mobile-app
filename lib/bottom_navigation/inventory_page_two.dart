@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
 import 'package:hervest_ai/provider/inventory_provider.dart';
 import 'package:hervest_ai/models/inventory_model.dart';
+import 'package:hervest_ai/widgets/app_input_styles.dart';
 
 class InventoryPageTwo extends StatefulWidget {
   const InventoryPageTwo({super.key});
@@ -187,7 +188,7 @@ class _InventoryPageTwoState extends State<InventoryPageTwo> {
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, top: 16),
-      child: Text(text, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+      child: Text(text, style: AppInputStyles.labelStyle),
     );
   }
 
@@ -195,13 +196,7 @@ class _InventoryPageTwoState extends State<InventoryPageTwo> {
     return TextFormField(
       controller: controller,
       keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
-      decoration: InputDecoration(
-        hintText: hint,
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-      ),
+      decoration: AppInputStyles.decoration(hintText: hint),
       validator: (value) => value == null || value.isEmpty ? error : null,
     );
   }
@@ -209,10 +204,7 @@ class _InventoryPageTwoState extends State<InventoryPageTwo> {
   Widget _buildDropdown() {
     return DropdownButtonFormField<String>(
       value: _selectedCategory,
-      decoration: InputDecoration(
-        filled: true, fillColor: Colors.white,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-      ),
+      decoration: AppInputStyles.decoration(),
       hint: const Text("Select category"),
       items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
       onChanged: (val) => setState(() => _selectedCategory = val),
@@ -226,8 +218,9 @@ class _InventoryPageTwoState extends State<InventoryPageTwo> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white, border: Border.all(color: Colors.grey.shade300),
-          borderRadius: BorderRadius.circular(8),
+          color: AppInputStyles.inputFill,
+          border: Border.all(color: AppInputStyles.inputBorder, width: 1.2),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

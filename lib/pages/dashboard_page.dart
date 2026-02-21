@@ -30,7 +30,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           backgroundColor: backgroundCream,
           body: SafeArea(
             child: CustomScrollView(
-              physics: const BouncingScrollPhysics(),
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
               slivers: [
                 SliverAppBar(
                   expandedHeight: 180,
@@ -76,18 +78,86 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// ================= DYNAMIC UI COMPONENTS =================
 
   Widget _buildProfileRow(String name) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    
+    // Responsive logo size
+    final logoWidth = isMobile ? 45.0 : 55.0;
+    final logoHeight = isMobile ? 35.0 : 42.0;
+    final nameFontSize = isMobile ? 20.0 : 26.0;
+    final welcomeFontSize = isMobile ? 12.0 : 14.0;
+    final spacing = isMobile ? 12.0 : 16.0;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Welcome back,",
-                style: TextStyle(color: Colors.black.withOpacity(0.5), fontSize: 14)),
-            Text(name,
-                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-          ],
+        // Logo and Text Section (Side by Side)
+        Flexible(
+          child: Row(
+            children: [
+              // HerVest AI Logo
+              Container(
+                width: logoWidth,
+                height: logoHeight,
+                decoration: BoxDecoration(
+                  color: primaryGreen,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryGreen.withOpacity(0.15),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(2),
+                    child: Image.asset(
+                      'assets/hervbypd.png',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(Icons.image, color: Colors.white, size: isMobile ? 16 : 20);
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: spacing),
+              // Welcome Text
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Welcome back,",
+                      style: TextStyle(
+                        color: Colors.black.withOpacity(0.5),
+                        fontSize: welcomeFontSize,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: isMobile ? 4 : 6),
+                    Text(
+                      name,
+                      style: TextStyle(
+                        fontSize: nameFontSize,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
+        SizedBox(width: spacing),
+        // Avatar Section
         _buildAvatar(name),
       ],
     );
@@ -234,32 +304,102 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _statCard(String title, String value, IconData icon, Color color, String route) {
-    return GestureDetector(
+    return _StatCard(
+      title: title,
+      value: value,
+      icon: icon,
+      color: color,
       onTap: () => context.push(route),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.black.withOpacity(0.02)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              ],
-            )
-          ],
+    );
+  }
+}
+
+class _StatCard extends StatefulWidget {
+  const _StatCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  State<_StatCard> createState() => _StatCardState();
+}
+
+class _StatCardState extends State<_StatCard> {
+  bool _isHovered = false;
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool active = _isHovered || _isPressed;
+    final Color borderColor =
+        active ? widget.color.withOpacity(0.55) : widget.color.withOpacity(0.18);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapCancel: () => setState(() => _isPressed = false),
+        onTapUp: (_) => setState(() => _isPressed = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.all(16),
+          transform: active
+              ? (Matrix4.identity()..translate(0.0, -4.0))
+              : Matrix4.identity(),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: borderColor, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(active ? 0.12 : 0.06),
+                blurRadius: active ? 18 : 10,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: widget.color.withOpacity(active ? 0.18 : 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(widget.icon, color: widget.color, size: 20),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.title,
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                  Text(
+                    widget.value,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
