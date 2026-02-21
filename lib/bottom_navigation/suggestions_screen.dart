@@ -29,7 +29,8 @@ class SuggestionsScreen extends StatelessWidget {
         elevation: 0,
         foregroundColor: Colors.black,
       ),
-      body: expiringItems.isEmpty
+      body: SafeArea(
+        child: expiringItems.isEmpty
           ? _buildEmptyState()
           : Padding(
               padding: const EdgeInsets.all(16.0),
@@ -54,6 +55,7 @@ class SuggestionsScreen extends StatelessWidget {
                 ],
               ),
             ),
+      ),
     );
   }
 
@@ -191,7 +193,8 @@ class SuggestionsPage extends StatelessWidget {
         elevation: 0,
         centerTitle: false,
       ),
-      body: itemsToDonate.isEmpty
+      body: SafeArea(
+        child: itemsToDonate.isEmpty
           ? _buildEmptyState()
           : ListView.builder(
               padding: const EdgeInsets.all(20),
@@ -203,6 +206,7 @@ class SuggestionsPage extends StatelessWidget {
                 return _buildSuggestionCard(item, donees);
               },
             ),
+      ),
     );
   }
 

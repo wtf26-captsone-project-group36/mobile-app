@@ -31,20 +31,22 @@ class ProfilePage extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          children: [
-            _buildAvatarHeader(),
-            const SizedBox(height: 32),
-            _buildProfileDetails(),
-            const SizedBox(height: 40),
-            _buildNotificationSection(state),
-            const SizedBox(height: 40),
-            _buildLogoutButton(),
-            const SizedBox(height: 20),
-          ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            children: [
+              _buildAvatarHeader(),
+              const SizedBox(height: 32),
+              _buildProfileDetails(),
+              const SizedBox(height: 40),
+              _buildNotificationSection(state),
+              const SizedBox(height: 40),
+              _buildLogoutButton(),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );

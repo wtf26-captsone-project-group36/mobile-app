@@ -26,32 +26,34 @@ class SuggestionsLogisticsPage extends StatelessWidget {
         elevation: 0,
         foregroundColor: Colors.black,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildInfoCard(),
-            const SizedBox(height: 32),
-            const Text("Pickup Details", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            _buildPickupOption(
-              title: "NGO Pickup",
-              subtitle: "The partner will come to your location.",
-              icon: Icons.local_shipping_outlined,
-              isSelected: true,
-            ),
-            _buildPickupOption(
-              title: "Self-Drop",
-              subtitle: "You deliver to the partner's hub.",
-              icon: Icons.storefront_outlined,
-              isSelected: false,
-            ),
-            const SizedBox(height: 32),
-            _buildImpactPreview(),
-            const SizedBox(height: 40),
-            _buildActionButtons(context),
-          ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildInfoCard(),
+              const SizedBox(height: 32),
+              const Text("Pickup Details", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              _buildPickupOption(
+                title: "NGO Pickup",
+                subtitle: "The partner will come to your location.",
+                icon: Icons.local_shipping_outlined,
+                isSelected: true,
+              ),
+              _buildPickupOption(
+                title: "Self-Drop",
+                subtitle: "You deliver to the partner's hub.",
+                icon: Icons.storefront_outlined,
+                isSelected: false,
+              ),
+              const SizedBox(height: 32),
+              _buildImpactPreview(),
+              const SizedBox(height: 40),
+              _buildActionButtons(context),
+            ],
+        ),
         ),
       ),
     );

@@ -21,21 +21,23 @@ class ImpactDashboardPage extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeroStats(),
-            const SizedBox(height: 24),
-            const Text("Detailed Metrics", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            _buildMetricGrid(),
-            const SizedBox(height: 32),
-            const Text("Beneficiary Partners", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            _buildPartnerList(),
-          ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeroStats(),
+              const SizedBox(height: 24),
+              const Text("Detailed Metrics", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              _buildMetricGrid(),
+              const SizedBox(height: 32),
+              const Text("Beneficiary Partners", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              _buildPartnerList(),
+            ],
+          ),
         ),
       ),
     );
