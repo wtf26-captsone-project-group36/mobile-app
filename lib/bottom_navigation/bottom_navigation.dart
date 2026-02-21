@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../pages/dashboard_page.dart';
 import 'inventory_screen.dart';
-import 'finances_screen.dart';
+import 'cashflow_screen.dart';
 import 'suggestions_screen.dart';
 import 'profile_screen.dart';
 
@@ -20,12 +20,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   bool _isGuest = false;
   bool _bannerVisible = true;
 
-  final List<Widget> _pages = const [
+  final List<Widget> _pages = [
     DashboardScreen(),
-    InventoryScreen(),
-    FinancesScreen(),
+    InventoryPageOne(),
+    CashflowScreen(),
     SuggestionsScreen(),
-    ProfileScreen(),
+    ProfilePage(),
   ];
 
   @override

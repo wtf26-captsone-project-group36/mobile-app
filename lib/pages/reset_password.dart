@@ -509,7 +509,6 @@ class _SuccessBottomSheet extends StatelessWidget {
 
   static const Color kCream = Color(0xFFF5F5DC);
   static const Color kDarkGreen = Color(0xFF1A5C3A);
-  static const Color kMediumGreen = Color(0xFF2E7D52);
   static const Color kSuccess = Color(0xFF16A34A);
   static const Color kTextMuted = Color(0xFF6B7280);
 
@@ -605,56 +604,4 @@ class _SuccessBottomSheet extends StatelessWidget {
 
 // ─── Placeholder Logo Painter ─────────────────────────────────────────────────
 // Remove once you have your actual logo asset.
-class _HLogoPlaceholderPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final greenPaint = Paint()
-      ..color = const Color(0xFF0F3D26)
-      ..style = PaintingStyle.fill;
-    final goldPaint = Paint()
-      ..color = const Color(0xFFD4A017)
-      ..style = PaintingStyle.fill;
 
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, 0, size.width * 0.25, size.height),
-        const Radius.circular(4),
-      ),
-      greenPaint,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width * 0.75, 0, size.width * 0.25, size.height),
-        const Radius.circular(4),
-      ),
-      greenPaint,
-    );
-    canvas.drawRect(
-      Rect.fromLTWH(
-        size.width * 0.25,
-        size.height * 0.40,
-        size.width * 0.50,
-        size.height * 0.20,
-      ),
-      greenPaint,
-    );
-    final leafPath = Path()
-      ..moveTo(size.width * 0.35, size.height * 0.15)
-      ..quadraticBezierTo(
-        size.width * 0.65,
-        size.height * 0.05,
-        size.width * 0.70,
-        size.height * 0.35,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.50,
-        size.height * 0.30,
-        size.width * 0.35,
-        size.height * 0.15,
-      );
-    canvas.drawPath(leafPath, goldPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

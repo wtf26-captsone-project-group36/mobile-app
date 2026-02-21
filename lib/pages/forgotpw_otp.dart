@@ -23,7 +23,6 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
   static const Color kCream = Color(0xFFF5F5DC);
   static const Color kDarkGreen = Color(0xFF1A5C3A);
   static const Color kMediumGreen = Color(0xFF2E7D52);
-  static const Color kGold = Color(0xFFD4A017);
   static const Color kTextDark = Color(0xFF1A1A1A);
   static const Color kTextMuted = Color(0xFF6B7280);
   static const Color kError = Color(0xFFDC2626);

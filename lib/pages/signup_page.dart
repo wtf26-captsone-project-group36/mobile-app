@@ -96,7 +96,7 @@ class _SignUpPageState extends State<SignUpPage> {
               const Text(
                 'SIGN UP',
                 style: TextStyle(
-                  fontSize: 28,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),

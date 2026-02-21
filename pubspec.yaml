@@ -47,6 +47,7 @@ dependencies:
   shared_preferences: ^2.5.3
   curved_navigation_bar: ^1.0.6
   convex_bottom_bar: ^3.2.0
+  intl: ^0.20.2
   
 
   
