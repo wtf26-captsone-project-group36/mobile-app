@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hervest_ai/widgets/auth_form_field.dart';
 
 /// ForgotPasswordEmailScreen
 /// Screen 1 of 4 in the forgot password flow.
-/// Design: HerVest AI — cream background, dark green primary, gold accent.
-/// Backend: Supabase — call `supabase.auth.resetPasswordForEmail(email)`
+/// Design: HerVest AI â€” cream background, dark green primary, gold accent.
+/// Backend: Supabase â€” call `supabase.auth.resetPasswordForEmail(email)`
 
 class ForgotPasswordEmailScreen extends StatefulWidget {
   const ForgotPasswordEmailScreen({super.key});
@@ -26,7 +26,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
   static const Color kInputFill = Color(0xFFFFFFFF);
   static const Color kError = Color(0xFFDC2626);
 
-  // ─── State ───────────────────────────────────────────────────────────────
+  // â”€â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _emailFocus = FocusNode();
@@ -40,7 +40,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
     super.dispose();
   }
 
-  // ─── Validation ──────────────────────────────────────────────────────────
+  // â”€â”€â”€ Validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   String? _validateEmail(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Please enter your email address';
@@ -52,7 +52,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
     return null;
   }
 
-  // ─── Submit ───────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Submit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -62,7 +62,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
     });
 
     try {
-      // ── SUPABASE INTEGRATION ─────────────────────────────────────────────
+      // â”€â”€ SUPABASE INTEGRATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       // Uncomment and replace with your actual Supabase client import:
       //
       // import 'package:supabase_flutter/supabase_flutter.dart';
@@ -73,11 +73,11 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
       // );
       //
       // Supabase will send a 6-digit OTP to the user's email automatically.
-      // ─────────────────────────────────────────────────────────────────────
+      // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-      // ── MOCK DELAY (remove when Supabase is wired up) ────────────────────
+      // â”€â”€ MOCK DELAY (remove when Supabase is wired up) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       await Future.delayed(const Duration(milliseconds: 1200));
-      // ─────────────────────────────────────────────────────────────────────
+      // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
       if (!mounted) return;
 
@@ -85,7 +85,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
       final encodedEmail = Uri.encodeComponent(_emailController.text.trim());
       context.push('/forgot-password/check-email/$encodedEmail');
 
-      // ── OR if you're not using named routes yet: ──────────────────────────
+      // â”€â”€ OR if you're not using named routes yet: â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       // Navigator.push(
       //   context,
       //   MaterialPageRoute(
@@ -96,7 +96,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
       // );
     } catch (e) {
       setState(() {
-        // Supabase throws AuthException — the e.message has the details
+        // Supabase throws AuthException â€” the e.message has the details
         _errorMessage =
             'Something went wrong. Please check your email and try again.';
       });
@@ -105,7 +105,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
     }
   }
 
-  // ─── Build ────────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Build â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -137,7 +137,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
     );
   }
 
-  // ─── App Bar ──────────────────────────────────────────────────────────────
+  // â”€â”€â”€ App Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: kCream,
@@ -150,7 +150,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
     );
   }
 
-  // ─── Logo ─────────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Logo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildLogo() {
     return Center(
       child: Container(
@@ -161,7 +161,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              color: kDarkGreen.withOpacity(0.20),
+              color: kDarkGreen.withValues(alpha: 0.20),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -171,7 +171,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
           borderRadius: BorderRadius.circular(22),
           child: Padding(
             padding: const EdgeInsets.all(3),
-            // ── Replace with your actual asset ────────────────────────────
+            // â”€â”€ Replace with your actual asset â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             child: Image.asset('assets/hervbypd.png', fit: BoxFit.cover),
             //child: CustomPaint(painter: _HLogoPlaceholderPainter()),
           ),
@@ -180,7 +180,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
     );
   }
 
-  // ─── Heading ──────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Heading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildHeading() {
     return Column(
       children: [
@@ -209,7 +209,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
     );
   }
 
-  // ─── Form ─────────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildForm() {
     return Form(
       key: _formKey,
@@ -240,14 +240,14 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
     );
   }
 
-  // ─── Error Banner ─────────────────────────────────────────────────────────
+  // â”€â”€â”€ Error Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildErrorBanner() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: kError.withOpacity(0.08),
+        color: kError.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: kError.withOpacity(0.25)),
+        border: Border.all(color: kError.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [
@@ -264,7 +264,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
     );
   }
 
-  // ─── Submit Button ────────────────────────────────────────────────────────
+  // â”€â”€â”€ Submit Button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildSubmitButton() {
     return SizedBox(
       height: 54,
@@ -273,7 +273,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: kDarkGreen,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: kDarkGreen.withOpacity(0.6),
+          disabledBackgroundColor: kDarkGreen.withValues(alpha: 0.6),
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -300,7 +300,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
     );
   }
 
-  // ─── Login Link ───────────────────────────────────────────────────────────
+  // â”€â”€â”€ Login Link â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildLoginLink() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,

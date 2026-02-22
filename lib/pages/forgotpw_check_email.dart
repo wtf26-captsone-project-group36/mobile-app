@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class CheckEmailScreen extends StatefulWidget {
@@ -178,7 +178,7 @@ class _CheckEmailScreenState extends State<CheckEmailScreen>
                   style: TextStyle(
                     fontSize: 12,
                     height: 1.6,
-                    color: kTextMuted.withOpacity(0.75),
+                    color: kTextMuted.withValues(alpha: 0.75),
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -200,7 +200,7 @@ class _CheckEmailScreenState extends State<CheckEmailScreen>
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              color: kDarkGreen.withOpacity(0.20),
+              color: kDarkGreen.withValues(alpha: 0.20),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -229,9 +229,9 @@ class _CheckEmailScreenState extends State<CheckEmailScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: kDarkGreen.withOpacity(0.08),
+        color: kDarkGreen.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: kDarkGreen.withOpacity(0.15)),
+        border: Border.all(color: kDarkGreen.withValues(alpha: 0.15)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -255,9 +255,9 @@ class _CheckEmailScreenState extends State<CheckEmailScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: kSuccess.withOpacity(0.08),
+        color: kSuccess.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: kSuccess.withOpacity(0.25)),
+        border: Border.all(color: kSuccess.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [

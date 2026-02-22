@@ -59,7 +59,7 @@ class LandingPage extends StatelessWidget {
                 icon: FontAwesomeIcons.whatsapp,
                 backgroundColor: whatsappGreen,
                 onPressed: () {
-                  // Logic for Phone/WhatsApp OTP
+                  context.push('/auth/whatsapp-mock');
                 },
               ),
               const SizedBox(height: 12),
@@ -80,7 +80,7 @@ class LandingPage extends StatelessWidget {
                 label: "Continue with Facebook",
                 icon: FontAwesomeIcons.facebook,
                 backgroundColor: facebookBlue,
-                onPressed: () {},
+                onPressed: () => context.push('/auth/facebook-mock'),
               ),
 
               const SizedBox(height: 32),

@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,7 +12,8 @@ class ProfileController extends ChangeNotifier {
   static const String _roleKey = 'profile_role';
   static const String _businessTypeKey = 'profile_business_type';
   static const String _locationKey = 'profile_location';
-  static const String _avatarPathKey = 'profile_avatar_path';
+  static const String _avatarBase64Key = 'profile_avatar_base64';
+  static const String _avatarPathKey = 'profile_avatar_path'; // legacy key
 
   bool _loaded = false;
   bool get isLoaded => _loaded;
@@ -23,10 +25,9 @@ class ProfileController extends ChangeNotifier {
   String role = '';
   String businessType = '';
   String location = '';
-  String avatarPath = '';
+  Uint8List? avatarBytes;
 
   Future<void> load() async {
-    if (_loaded) return;
     final prefs = await SharedPreferences.getInstance();
     fullName = prefs.getString(_fullNameKey) ?? '';
     email = prefs.getString(_emailKey) ?? '';
@@ -35,7 +36,21 @@ class ProfileController extends ChangeNotifier {
     role = prefs.getString(_roleKey) ?? '';
     businessType = prefs.getString(_businessTypeKey) ?? '';
     location = prefs.getString(_locationKey) ?? '';
-    avatarPath = prefs.getString(_avatarPathKey) ?? '';
+    final avatarBase64 = prefs.getString(_avatarBase64Key) ?? '';
+    if (avatarBase64.isNotEmpty) {
+      try {
+        avatarBytes = base64Decode(avatarBase64);
+      } catch (_) {
+        avatarBytes = null;
+        await prefs.remove(_avatarBase64Key);
+      }
+    } else {
+      avatarBytes = null;
+    }
+
+    if (prefs.containsKey(_avatarPathKey)) {
+      await prefs.remove(_avatarPathKey);
+    }
     _loaded = true;
     notifyListeners();
   }
@@ -68,16 +83,18 @@ class ProfileController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateAvatarPath(String path) async {
+  Future<void> updateAvatarBytes(Uint8List bytes) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_avatarPathKey, path);
-    avatarPath = path;
+    await prefs.setString(_avatarBase64Key, base64Encode(bytes));
+    avatarBytes = bytes;
     notifyListeners();
   }
 
-  File? get avatarFile {
-    if (avatarPath.isEmpty) return null;
-    final file = File(avatarPath);
-    return file.existsSync() ? file : null;
+  Future<void> clearAvatar() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_avatarBase64Key);
+    await prefs.remove(_avatarPathKey);
+    avatarBytes = null;
+    notifyListeners();
   }
 }

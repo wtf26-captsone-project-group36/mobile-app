@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
 import 'package:hervest_ai/provider/app_state_controller_mock.dart';
 import 'package:hervest_ai/provider/profile_controller.dart';
+import 'package:hervest_ai/core/utils/user_name_utils.dart';
 import 'package:hervest_ai/widgets/auth_form_field.dart';
 
 class LoginPage extends StatefulWidget {
@@ -57,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
                   borderRadius: BorderRadius.circular(22),
                   boxShadow: [
                     BoxShadow(
-                      color: primaryGreen.withOpacity(0.20),
+                      color: primaryGreen.withValues(alpha: 0.20),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -139,28 +140,21 @@ class _LoginPageState extends State<LoginPage> {
                     await AppSessionStore.instance.setLoggedIn(true);
 
                     // Update stored email for profile
+                    final email = _emailController.text.trim();
+                    final inferredName = displayNameFromEmail(email);
                     await profile.updateProfile(
-                      fullName: profile.fullName,
-                      email: _emailController.text.trim(),
+                      fullName: profile.fullName.isNotEmpty ? profile.fullName : inferredName,
+                      email: email,
                       phone: profile.phone,
                       businessName: profile.businessName,
-                      role: profile.role,
+                      role: profile.role.isNotEmpty ? profile.role : 'Owner',
                       businessType: profile.businessType,
                       location: profile.location,
                     );
 
                     if (context.mounted) {
                       final appState = Provider.of<AppStateController>(context, listen: false);
-                      final savedName = profile.fullName.trim();
-                      if (savedName.isNotEmpty) {
-                        appState.setUserName(savedName);
-                      } else {
-                        final email = _emailController.text.trim();
-                        final nameFromEmail = email.split('@')[0];
-                        appState.setUserName(
-                          nameFromEmail.isNotEmpty ? nameFromEmail : 'User',
-                        );
-                      }
+                      appState.setUserName(displayNameFromEmail(email));
                       
                       context.go('/dashboard');
                     }

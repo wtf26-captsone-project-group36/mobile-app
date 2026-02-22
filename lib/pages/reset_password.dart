@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hervest_ai/widgets/auth_form_field.dart';
 
 /// ResetPasswordScreen
 /// Screen 4 of 4 in the forgot password flow.
 /// User sets a new password after successful OTP verification.
-/// Design: HerVest AI — cream background, dark green primary, gold accent.
-/// Backend: Supabase — update via `supabase.auth.updateUser(password: newPassword)`
+/// Design: HerVest AI â€” cream background, dark green primary, gold accent.
+/// Backend: Supabase â€” update via `supabase.auth.updateUser(password: newPassword)`
 /// Note: By the time the user reaches this screen, Supabase has already
 /// established a session from the verifyOTP call on Screen 3.
 
@@ -20,7 +20,7 @@ class ResetPasswordScreen extends StatefulWidget {
 }
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
-  // ─── Theme Colors
+  // â”€â”€â”€ Theme Colors
   static const Color kCream = Color(0xFFF5F5DC);
   static const Color kDarkGreen = Color(0xFF1A5C3A);
   static const Color kMediumGreen = Color(0xFF2E7D52);
@@ -32,7 +32,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   static const Color kInputFill = Color(0xFFFFFFFF);
   static const Color kInputBorder = Color(0xFFD1D5DB);
 
-  // ─── State
+  // â”€â”€â”€ State
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
@@ -44,7 +44,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   bool _obscureConfirm = true;
   String? _errorMessage;
 
-  // ─── Password strength
+  // â”€â”€â”€ Password strength
   double _strengthScore = 0;
   String _strengthLabel = '';
   Color _strengthColor = Colors.transparent;
@@ -65,7 +65,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     super.dispose();
   }
 
-  // ─── Password Strength Evaluator
+  // â”€â”€â”€ Password Strength Evaluator
   void _evaluateStrength() {
     final password = _passwordController.text;
     int score = 0;
@@ -94,7 +94,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     });
   }
 
-  // ─── Validation
+  // â”€â”€â”€ Validation
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter a new password';
@@ -121,7 +121,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     return null;
   }
 
-  // ─── Submit
+  // â”€â”€â”€ Submit
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -131,7 +131,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     });
 
     try {
-      // ── SUPABASE INTEGRATION ──
+      // â”€â”€ SUPABASE INTEGRATION â”€â”€
       // Supabase session is already set from the verifyOTP call on Screen 3.
       // Simply update the user's password:
       //
@@ -143,11 +143,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       //
       // After success, sign the user out so they log in fresh:
       // await Supabase.instance.client.auth.signOut();
-      // ──
+      // â”€â”€
 
-      // ── MOCK DELAY (remove when Supabase is wired up) ─
+      // â”€â”€ MOCK DELAY (remove when Supabase is wired up) â”€
       await Future.delayed(const Duration(milliseconds: 1400));
-      // ──
+      // â”€â”€
 
       if (!mounted) return;
       _showSuccessSheet();
@@ -161,7 +161,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     }
   }
 
-  // ─── Success Bottom Sheet
+  // â”€â”€â”€ Success Bottom Sheet
   void _showSuccessSheet() {
     showModalBottomSheet(
       context: context,
@@ -171,7 +171,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       builder: (_) => _SuccessBottomSheet(
         onGoToLogin: () {
           context.go('/login');
-          // ── OR navigate to named login route: ──
+          // â”€â”€ OR navigate to named login route: â”€â”€
           // Navigator.pushNamedAndRemoveUntil(
           //   context, '/login', (route) => false,
           // );
@@ -180,7 +180,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  // ─── Build
+  // â”€â”€â”€ Build
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -214,7 +214,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  // ─── App Bar
+  // â”€â”€â”€ App Bar
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: kCream,
@@ -227,7 +227,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  // ─── Logo
+  // â”€â”€â”€ Logo
   Widget _buildLogo() {
     return Center(
       child: Container(
@@ -238,7 +238,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              color: kDarkGreen.withOpacity(0.20),
+              color: kDarkGreen.withValues(alpha: 0.20),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -248,7 +248,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           borderRadius: BorderRadius.circular(22),
           child: Padding(
             padding: const EdgeInsets.all(3),
-            // ── REPLACE with your actual logo asset
+            // â”€â”€ REPLACE with your actual logo asset
             child: Image.asset('assets/hervbypd.png', fit: BoxFit.cover),
             //child: CustomPaint(painter: _HLogoPlaceholderPainter()),
           ),
@@ -280,14 +280,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  // ─── Form ─────────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildForm() {
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── New Password ────────────────────────────────────────────────
+          // â”€â”€ New Password â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           AuthFormField(
             label: 'Password',
             controller: _passwordController,
@@ -313,7 +313,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
           const SizedBox(height: 20),
 
-          // ── Confirm Password ─────────────────────────────────────────────
+          // â”€â”€ Confirm Password â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           AuthFormField(
             label: 'Confirm password',
             controller: _confirmController,
@@ -358,7 +358,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  // ─── Strength Indicator ───────────────────────────────────────────────────
+  // â”€â”€â”€ Strength Indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildStrengthIndicator() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -391,14 +391,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  // ─── Error Banner ─────────────────────────────────────────────────────────
+  // â”€â”€â”€ Error Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildErrorBanner() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: kError.withOpacity(0.08),
+        color: kError.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: kError.withOpacity(0.25)),
+        border: Border.all(color: kError.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [
@@ -415,7 +415,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  // ─── Password Requirements ────────────────────────────────────────────────
+  // â”€â”€â”€ Password Requirements â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildRequirements() {
     final password = _passwordController.text;
     return Column(
@@ -466,7 +466,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  // ─── Submit Button ────────────────────────────────────────────────────────
+  // â”€â”€â”€ Submit Button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildSubmitButton() {
     return SizedBox(
       height: 54,
@@ -475,7 +475,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: kDarkGreen,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: kDarkGreen.withOpacity(0.6),
+          disabledBackgroundColor: kDarkGreen.withValues(alpha: 0.6),
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -503,7 +503,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 }
 
-// ─── Success Bottom Sheet ─────────────────────────────────────────────────────
+// â”€â”€â”€ Success Bottom Sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _SuccessBottomSheet extends StatelessWidget {
   final VoidCallback onGoToLogin;
 
@@ -531,7 +531,7 @@ class _SuccessBottomSheet extends StatelessWidget {
             height: 4,
             margin: const EdgeInsets.only(bottom: 28),
             decoration: BoxDecoration(
-              color: kTextMuted.withOpacity(0.3),
+              color: kTextMuted.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -541,7 +541,7 @@ class _SuccessBottomSheet extends StatelessWidget {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: kSuccess.withOpacity(0.10),
+              color: kSuccess.withValues(alpha: 0.10),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -602,6 +602,6 @@ class _SuccessBottomSheet extends StatelessWidget {
   }
 }
 
-// ─── Placeholder Logo Painter ─────────────────────────────────────────────────
+// â”€â”€â”€ Placeholder Logo Painter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Remove once you have your actual logo asset.
 

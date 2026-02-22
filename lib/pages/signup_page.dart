@@ -163,6 +163,8 @@ class _SignUpPageState extends State<SignUpPage> {
                 child: ElevatedButton(
                   onPressed: () async {
                     final fullName = _fullNameController.text.trim();
+                    final appState = Provider.of<AppStateController>(context, listen: false);
+                    final profile = Provider.of<ProfileController>(context, listen: false);
                     if (fullName.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Please enter your full name')),
@@ -172,25 +174,22 @@ class _SignUpPageState extends State<SignUpPage> {
                     
                     // Store user name and update provider
                     await AppSessionStore.instance.setUserName(fullName);
-                    if (context.mounted) {
-                      final appState = Provider.of<AppStateController>(context, listen: false);
-                      final profile = Provider.of<ProfileController>(context, listen: false);
-                      await profile.updateProfile(
-                        fullName: fullName,
-                        email: _emailController.text.trim(),
-                        phone: profile.phone,
-                        businessName: profile.businessName,
-                        role: _selectedRole.trim(),
-                        businessType: _selectedBusinessType.trim(),
-                        location: profile.location,
-                      );
-                      appState.setUserName(fullName);
-                      
-                      // Clear guest mode and mark as logged in
-                      await AppSessionStore.instance.setGuestMode(false);
-                      await AppSessionStore.instance.setLoggedIn(true);
-                      context.go('/dashboard');
-                    }
+                    await profile.updateProfile(
+                      fullName: fullName,
+                      email: _emailController.text.trim(),
+                      phone: profile.phone,
+                      businessName: profile.businessName,
+                      role: _selectedRole.trim(),
+                      businessType: _selectedBusinessType.trim(),
+                      location: profile.location,
+                    );
+                    appState.setUserName(fullName);
+                    
+                    // Clear guest mode and mark as logged in
+                    await AppSessionStore.instance.setGuestMode(false);
+                    await AppSessionStore.instance.setLoggedIn(true);
+                    if (!context.mounted) return;
+                    context.go('/dashboard');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryGreen,
