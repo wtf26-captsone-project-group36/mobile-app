@@ -1,4 +1,17 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:hervest_ai/models/inventory_model.dart';
+import 'package:hervest_ai/provider/app_state_controller_mock.dart';
+import 'package:hervest_ai/provider/inventory_provider.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AccountSettingsPage extends StatefulWidget {
@@ -12,47 +25,20 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   static const Color kPrimaryGreen = Color(0xFF006B4D);
   static const Color kBackgroundCream = Color(0xFFFDFBF7);
 
-  static const String _currencyKey = 'settings_currency';
-  static const String _timezoneKey = 'settings_timezone';
-  static const String _languageKey = 'settings_language';
-  static const String _summaryDayKey = 'settings_summary_day';
-  static const String _summaryHourKey = 'settings_summary_hour';
-  static const String _pushAlertsKey = 'settings_push_alerts';
+  // Simple mock settings kept active (easy and useful)
   static const String _emailAlertsKey = 'settings_email_alerts';
   static const String _whatsappAlertsKey = 'settings_whatsapp_alerts';
-  static const String _twoFaKey = 'settings_two_fa';
-  static const String _analyticsConsentKey = 'settings_analytics_consent';
+  static const String _lastExportAtKey = 'settings_last_export_at';
+  static const String _lastExportTypeKey = 'settings_last_export_type';
+  static const String _logoAssetPath = 'assets/hervbypd.png';
 
-  final List<String> _currencies = ['NGN', 'USD', 'EUR', 'GBP'];
-  final List<String> _timezones = [
-    'Africa/Lagos',
-    'UTC',
-    'America/New_York',
-    'Europe/London',
-  ];
-  final List<String> _languages = ['English', 'French', 'Spanish'];
-  final List<String> _days = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday',
-  ];
-
-  String _currency = 'NGN';
-  String _timezone = 'Africa/Lagos';
-  String _language = 'English';
-  String _summaryDay = 'Monday';
-  int _summaryHour = 8;
-  bool _pushAlerts = true;
   bool _emailAlerts = true;
   bool _whatsappAlerts = false;
-  bool _twoFactor = false;
-  bool _analyticsConsent = true;
   bool _isLoaded = false;
-  bool _isSaving = false;
+  bool _isSavingChannels = false;
+  bool _isExporting = false;
+  String _lastExportAt = '';
+  String _lastExportType = '';
 
   @override
   void initState() {
@@ -63,67 +49,361 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _currency = prefs.getString(_currencyKey) ?? _currency;
-      _timezone = prefs.getString(_timezoneKey) ?? _timezone;
-      _language = prefs.getString(_languageKey) ?? _language;
-      _summaryDay = prefs.getString(_summaryDayKey) ?? _summaryDay;
-      _summaryHour = prefs.getInt(_summaryHourKey) ?? _summaryHour;
-      _pushAlerts = prefs.getBool(_pushAlertsKey) ?? _pushAlerts;
       _emailAlerts = prefs.getBool(_emailAlertsKey) ?? _emailAlerts;
       _whatsappAlerts = prefs.getBool(_whatsappAlertsKey) ?? _whatsappAlerts;
-      _twoFactor = prefs.getBool(_twoFaKey) ?? _twoFactor;
-      _analyticsConsent =
-          prefs.getBool(_analyticsConsentKey) ?? _analyticsConsent;
+      _lastExportAt = prefs.getString(_lastExportAtKey) ?? '';
+      _lastExportType = prefs.getString(_lastExportTypeKey) ?? '';
       _isLoaded = true;
     });
   }
 
-  Future<void> _save() async {
-    setState(() => _isSaving = true);
+  Future<void> _saveChannels() async {
+    setState(() => _isSavingChannels = true);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_currencyKey, _currency);
-    await prefs.setString(_timezoneKey, _timezone);
-    await prefs.setString(_languageKey, _language);
-    await prefs.setString(_summaryDayKey, _summaryDay);
-    await prefs.setInt(_summaryHourKey, _summaryHour);
-    await prefs.setBool(_pushAlertsKey, _pushAlerts);
     await prefs.setBool(_emailAlertsKey, _emailAlerts);
     await prefs.setBool(_whatsappAlertsKey, _whatsappAlerts);
-    await prefs.setBool(_twoFaKey, _twoFactor);
-    await prefs.setBool(_analyticsConsentKey, _analyticsConsent);
     if (!mounted) return;
-    setState(() => _isSaving = false);
+    setState(() => _isSavingChannels = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Settings saved')),
+      const SnackBar(content: Text('Notification channels updated')),
     );
   }
 
-  Future<void> _confirmDeleteAccount() async {
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete account?'),
-        content: const Text(
-          'This is a mock action. In production this would permanently remove your account.',
+  Future<void> _exportBusinessReport(ExportReportType reportType) async {
+    final inventoryProvider = context.read<InventoryProvider>();
+    final appState = context.read<AppStateController>();
+    final inventoryItems = inventoryProvider.items.toList(growable: false);
+    final criticalCount = inventoryProvider.criticalCount;
+    final totalLedgerValue = inventoryProvider.totalLedgerValue;
+    final transactions = appState.transactions
+        .map<Map<String, dynamic>>((tx) => Map<String, dynamic>.from(tx))
+        .toList(growable: false);
+
+    setState(() => _isExporting = true);
+    final prefs = await SharedPreferences.getInstance();
+    final exportedAt = DateTime.now();
+    final reportName = reportType == ExportReportType.inventory
+        ? 'Inventory'
+        : 'Cashflow';
+
+    try {
+      final logo = await _loadAppLogo();
+      final bytes = reportType == ExportReportType.inventory
+          ? await _buildInventoryReportPdf(
+              exportedAt,
+              inventoryItems: inventoryItems,
+              criticalCount: criticalCount,
+              totalLedgerValue: totalLedgerValue,
+              logo: logo,
+            )
+          : await _buildCashflowReportPdf(
+              exportedAt,
+              transactions: transactions,
+              logo: logo,
+            );
+
+      final fileName = _buildReportFileName(reportType, exportedAt);
+      final savedPath = await _savePdfToAppDocuments(
+        bytes: bytes,
+        fileName: fileName,
+      );
+
+      var shared = false;
+      try {
+        await Printing.sharePdf(bytes: bytes, filename: fileName);
+        shared = true;
+      } catch (_) {
+        shared = false;
+      }
+
+      if (!shared && savedPath == null) {
+        throw Exception('Export failed');
+      }
+
+      await prefs.setString(_lastExportAtKey, exportedAt.toIso8601String());
+      await prefs.setString(_lastExportTypeKey, reportName);
+
+      if (!mounted) return;
+      setState(() {
+        _lastExportAt = exportedAt.toIso8601String();
+        _lastExportType = reportName;
+      });
+
+      final message = shared
+          ? (savedPath == null
+                ? '$reportName PDF exported successfully'
+                : '$reportName PDF exported and saved to $savedPath')
+          : '$reportName PDF saved to app documents: $savedPath';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to export PDF. Please try again.'),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
+      }
+    }
+  }
+
+  Future<Uint8List> _buildInventoryReportPdf(
+    DateTime exportedAt, {
+    required List<InventoryItem> inventoryItems,
+    required int criticalCount,
+    required double totalLedgerValue,
+    required pw.MemoryImage? logo,
+  }) async {
+    final profilePrefs = await SharedPreferences.getInstance();
+    final business = _readProfileValue(
+      profilePrefs: profilePrefs,
+      key: 'profile_business',
+      fallback: 'Business',
+    );
+    final owner = profilePrefs.getString('profile_full_name') ?? 'Not set';
+
+    final document = pw.Document();
+    final items = inventoryItems;
+
+    document.addPage(
+      pw.MultiPage(
+        pageTheme: pw.PageTheme(
+          margin: const pw.EdgeInsets.all(24),
+          theme: pw.ThemeData.withFont(
+            base: pw.Font.helvetica(),
+            bold: pw.Font.helveticaBold(),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+        ),
+        build: (context) => [
+          ..._buildPdfHeader(logo: logo, title: 'Inventory Snapshot Report'),
+          pw.Text('Business: $business'),
+          pw.Text('Owner: $owner'),
+          pw.Text('Generated: ${_formatExportedAt(exportedAt)}'),
+          pw.SizedBox(height: 16),
+          pw.Text(
+            'Summary',
+            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
+          ),
+          pw.SizedBox(height: 6),
+          pw.Bullet(text: 'Total items: ${items.length}'),
+          pw.Bullet(text: 'Critical items: $criticalCount'),
+          pw.Bullet(
+            text:
+                'Estimated ledger value: NGN ${totalLedgerValue.toStringAsFixed(2)}',
+          ),
+          pw.SizedBox(height: 14),
+          pw.TableHelper.fromTextArray(
+            headers: const [
+              'Item',
+              'Category',
+              'Qty',
+              'Unit',
+              'Expiry',
+              'Status',
+              'Price',
+            ],
+            data: items
+                .map(
+                  (item) => [
+                    item.name,
+                    item.category,
+                    item.quantity.toStringAsFixed(2),
+                    item.unit,
+                    item.expiryDate?.toIso8601String().split('T').first ?? '-',
+                    item.status.name.toUpperCase(),
+                    item.purchasePrice?.toStringAsFixed(2) ?? '-',
+                  ],
+                )
+                .toList(),
+            headerStyle: pw.TextStyle(
+              color: PdfColor.fromHex('#FFFFFF'),
+              fontWeight: pw.FontWeight.bold,
+            ),
+            headerDecoration: pw.BoxDecoration(
+              color: PdfColor.fromHex('#006B4D'),
+            ),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+            cellAlignment: pw.Alignment.centerLeft,
+            cellPadding: const pw.EdgeInsets.all(6),
           ),
         ],
       ),
     );
 
-    if (shouldDelete != true || !mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Delete account action triggered (mock).')),
+    return document.save();
+  }
+
+  Future<Uint8List> _buildCashflowReportPdf(
+    DateTime exportedAt, {
+    required List<Map<String, dynamic>> transactions,
+    required pw.MemoryImage? logo,
+  }) async {
+    final profilePrefs = await SharedPreferences.getInstance();
+    final business = _readProfileValue(
+      profilePrefs: profilePrefs,
+      key: 'profile_business',
+      fallback: 'Business',
     );
+    final owner = profilePrefs.getString('profile_full_name') ?? 'Not set';
+
+    double income = 0;
+    double expense = 0;
+    for (final tx in transactions) {
+      final rawAmount = (tx['amount'] ?? '').toString();
+      final value = _parseCurrencyAmount(rawAmount);
+      final type = (tx['type'] ?? '').toString().toLowerCase();
+      if (type == 'income') {
+        income += value;
+      } else {
+        expense += value;
+      }
+    }
+    final net = income - expense;
+
+    final document = pw.Document();
+    document.addPage(
+      pw.MultiPage(
+        pageTheme: pw.PageTheme(
+          margin: const pw.EdgeInsets.all(24),
+          theme: pw.ThemeData.withFont(
+            base: pw.Font.helvetica(),
+            bold: pw.Font.helveticaBold(),
+          ),
+        ),
+        build: (context) => [
+          ..._buildPdfHeader(logo: logo, title: 'Cashflow Summary Report'),
+          pw.Text('Business: $business'),
+          pw.Text('Owner: $owner'),
+          pw.Text('Generated: ${_formatExportedAt(exportedAt)}'),
+          pw.SizedBox(height: 16),
+          pw.Text(
+            'Summary',
+            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
+          ),
+          pw.SizedBox(height: 6),
+          pw.Bullet(text: 'Total income: NGN ${income.toStringAsFixed(2)}'),
+          pw.Bullet(text: 'Total expenses: NGN ${expense.toStringAsFixed(2)}'),
+          pw.Bullet(text: 'Net balance: NGN ${net.toStringAsFixed(2)}'),
+          pw.Bullet(text: 'Transactions: ${transactions.length}'),
+          pw.SizedBox(height: 14),
+          pw.TableHelper.fromTextArray(
+            headers: const ['Date', 'Title', 'Type', 'Amount'],
+            data: transactions
+                .map(
+                  (tx) => [
+                    (tx['date'] ?? '').toString(),
+                    (tx['title'] ?? '').toString(),
+                    (tx['type'] ?? '').toString(),
+                    (tx['amount'] ?? '').toString(),
+                  ],
+                )
+                .toList(),
+            headerStyle: pw.TextStyle(
+              color: PdfColor.fromHex('#FFFFFF'),
+              fontWeight: pw.FontWeight.bold,
+            ),
+            headerDecoration: pw.BoxDecoration(
+              color: PdfColor.fromHex('#006B4D'),
+            ),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+            cellAlignment: pw.Alignment.centerLeft,
+            cellPadding: const pw.EdgeInsets.all(6),
+          ),
+        ],
+      ),
+    );
+
+    return document.save();
+  }
+
+  double _parseCurrencyAmount(String input) {
+    final sanitized = input.replaceAll(RegExp(r'[^0-9\.-]'), '');
+    return double.tryParse(sanitized) ?? 0;
+  }
+
+  Future<pw.MemoryImage?> _loadAppLogo() async {
+    try {
+      final logoBytes = await rootBundle.load(_logoAssetPath);
+      return pw.MemoryImage(logoBytes.buffer.asUint8List());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<String?> _savePdfToAppDocuments({
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    if (kIsWeb) return null;
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}${Platform.pathSeparator}$fileName');
+      await file.writeAsBytes(bytes, flush: true);
+      return file.path;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  List<pw.Widget> _buildPdfHeader({
+    required pw.MemoryImage? logo,
+    required String title,
+  }) {
+    return [
+      pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
+        children: [
+          if (logo != null)
+            pw.Container(
+              width: 42,
+              height: 42,
+              decoration: pw.BoxDecoration(
+                borderRadius: pw.BorderRadius.circular(6),
+              ),
+              child: pw.Image(logo, fit: pw.BoxFit.contain),
+            ),
+          if (logo != null) pw.SizedBox(width: 10),
+          pw.Expanded(
+            child: pw.Text(
+              title,
+              style: pw.TextStyle(
+                fontSize: 18,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColor.fromHex('#006B4D'),
+              ),
+            ),
+          ),
+        ],
+      ),
+      pw.SizedBox(height: 8),
+    ];
+  }
+
+  String _readProfileValue({
+    required SharedPreferences profilePrefs,
+    required String key,
+    required String fallback,
+  }) {
+    final value = profilePrefs.getString(key)?.trim() ?? '';
+    return value.isEmpty ? fallback : value;
+  }
+
+  String _formatExportedAt(DateTime value) {
+    return DateFormat('yyyy-MM-dd HH:mm').format(value.toLocal());
+  }
+
+  String _buildReportFileName(ExportReportType type, DateTime exportedAt) {
+    final reportKey = type == ExportReportType.inventory
+        ? 'inventory_report'
+        : 'cashflow_report';
+    final timestamp = DateFormat(
+      'yyyyMMdd_HHmmss',
+    ).format(exportedAt.toLocal());
+    return '${reportKey}_$timestamp.pdf';
   }
 
   @override
@@ -142,143 +422,143 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
               padding: const EdgeInsets.all(16),
               children: [
                 _sectionCard(
-                  title: 'Business Preferences',
+                  title: 'Export Business Report',
                   children: [
-                    _dropdownTile(
-                      label: 'Currency',
-                      value: _currency,
-                      items: _currencies,
-                      onChanged: (value) => setState(() => _currency = value),
+                    const Text(
+                      'Generate a printable PDF for inventory or cashflow data.',
+                      style: TextStyle(color: Colors.black54, fontSize: 13),
                     ),
-                    _dropdownTile(
-                      label: 'Timezone',
-                      value: _timezone,
-                      items: _timezones,
-                      onChanged: (value) => setState(() => _timezone = value),
-                    ),
-                    _dropdownTile(
-                      label: 'Language',
-                      value: _language,
-                      items: _languages,
-                      onChanged: (value) => setState(() => _language = value),
+                    const SizedBox(height: 10),
+                    if (_lastExportAt.isNotEmpty)
+                      Text(
+                        'Last export: $_lastExportType at ${_formatExportedAt(DateTime.parse(_lastExportAt))}',
+                        style: const TextStyle(
+                          color: Colors.black54,
+                          fontSize: 12,
+                        ),
+                      ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 46,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: kPrimaryGreen,
+                                foregroundColor: Colors.white,
+                              ),
+                              onPressed: _isExporting
+                                  ? null
+                                  : () => _exportBusinessReport(
+                                      ExportReportType.inventory,
+                                    ),
+                              icon: _isExporting
+                                  ? const SizedBox(
+                                      height: 16,
+                                      width: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
+                                    )
+                                  : const Icon(Icons.inventory_2_outlined),
+                              label: const Text('Inventory PDF'),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: SizedBox(
+                            height: 46,
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: kPrimaryGreen,
+                                side: const BorderSide(color: kPrimaryGreen),
+                              ),
+                              onPressed: _isExporting
+                                  ? null
+                                  : () => _exportBusinessReport(
+                                      ExportReportType.cashflow,
+                                    ),
+                              icon: const Icon(Icons.bar_chart_outlined),
+                              label: const Text('Cashflow PDF'),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 _sectionCard(
-                  title: 'Notification Channels',
+                  title: 'Update Channels',
                   children: [
-                    _switchTile(
-                      label: 'Push notifications',
-                      value: _pushAlerts,
-                      onChanged: (value) => setState(() => _pushAlerts = value),
+                    const Text(
+                      'Control if you receive updates via Email or WhatsApp.',
+                      style: TextStyle(color: Colors.black54, fontSize: 13),
                     ),
-                    _switchTile(
-                      label: 'Email updates',
+                    const SizedBox(height: 8),
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Email updates'),
                       value: _emailAlerts,
-                      onChanged: (value) => setState(() => _emailAlerts = value),
+                      activeThumbColor: kPrimaryGreen,
+                      activeTrackColor: kPrimaryGreen.withValues(alpha: 0.35),
+                      onChanged: (value) =>
+                          setState(() => _emailAlerts = value),
                     ),
-                    _switchTile(
-                      label: 'WhatsApp updates',
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('WhatsApp updates'),
                       value: _whatsappAlerts,
+                      activeThumbColor: kPrimaryGreen,
+                      activeTrackColor: kPrimaryGreen.withValues(alpha: 0.35),
                       onChanged: (value) =>
                           setState(() => _whatsappAlerts = value),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _sectionCard(
-                  title: 'Weekly Summary',
-                  children: [
-                    _dropdownTile(
-                      label: 'Summary day',
-                      value: _summaryDay,
-                      items: _days,
-                      onChanged: (value) => setState(() => _summaryDay = value),
-                    ),
-                    _dropdownTile(
-                      label: 'Summary time',
-                      value: '${_summaryHour.toString().padLeft(2, '0')}:00',
-                      items: List.generate(
-                        24,
-                        (index) => '${index.toString().padLeft(2, '0')}:00',
-                      ),
-                      onChanged: (value) => setState(
-                        () => _summaryHour = int.tryParse(value.split(':').first) ?? 8,
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: _isSavingChannels ? null : _saveChannels,
+                        child: _isSavingChannels
+                            ? const SizedBox(
+                                height: 16,
+                                width: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.2,
+                                ),
+                              )
+                            : const Text('Save Preferences'),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                _sectionCard(
-                  title: 'Security & Privacy',
-                  children: [
-                    _switchTile(
-                      label: 'Two-factor authentication (mock)',
-                      value: _twoFactor,
-                      onChanged: (value) => setState(() => _twoFactor = value),
-                    ),
-                    _switchTile(
-                      label: 'Allow analytics insights',
-                      value: _analyticsConsent,
-                      onChanged: (value) =>
-                          setState(() => _analyticsConsent = value),
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.download_outlined),
-                      title: const Text('Export business report'),
-                      subtitle:
-                          const Text('Download a mock summary of your records'),
-                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Report export queued (mock).'),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 48,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: kPrimaryGreen,
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: _isSaving ? null : _save,
-                    child: _isSaving
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.4,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : const Text('Save Settings'),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: _confirmDeleteAccount,
-                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                  label: const Text(
-                    'Delete Account',
-                    style: TextStyle(color: Colors.redAccent),
-                  ),
-                ),
-                const SizedBox(height: 20),
+
+                // Temporarily commented out to avoid repetitive settings UX.
+                // _sectionCard(
+                //   title: 'Business Preferences',
+                //   children: [ ... ],
+                // ),
+                //
+                // _sectionCard(
+                //   title: 'Security & Privacy',
+                //   children: [ ... ],
+                // ),
+                //
+                // _sectionCard(
+                //   title: 'Weekly Summary',
+                //   children: [ ... ],
+                // ),
               ],
             ),
     );
   }
 
-  Widget _sectionCard({
-    required String title,
-    required List<Widget> children,
-  }) {
+  Widget _sectionCard({required String title, required List<Widget> children}) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -299,44 +579,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       ),
     );
   }
-
-  Widget _dropdownTile({
-    required String label,
-    required String value,
-    required List<String> items,
-    required ValueChanged<String> onChanged,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: DropdownButtonFormField<String>(
-        initialValue: value,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-        items: items
-            .map((item) => DropdownMenuItem(value: item, child: Text(item)))
-            .toList(),
-        onChanged: (next) {
-          if (next == null) return;
-          onChanged(next);
-        },
-      ),
-    );
-  }
-
-  Widget _switchTile({
-    required String label,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return SwitchListTile.adaptive(
-      contentPadding: EdgeInsets.zero,
-      title: Text(label),
-      value: value,
-      onChanged: onChanged,
-      activeThumbColor: kPrimaryGreen,
-      activeTrackColor: kPrimaryGreen.withValues(alpha: 0.35),
-    );
-  }
 }
+
+enum ExportReportType { inventory, cashflow }
