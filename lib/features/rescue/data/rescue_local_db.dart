@@ -8,7 +8,7 @@ class RescueLocalDb {
   static final RescueLocalDb instance = RescueLocalDb._();
 
   static const String _dbName = 'hervest_rescue.db';
-  static const int _dbVersion = 1;
+  static const int _dbVersion = 2;
 
   static const String rescueActionsTable = 'rescue_actions';
   static const String badgeEarningsTable = 'badge_earnings';
@@ -47,7 +47,8 @@ class RescueLocalDb {
             quantity REAL NOT NULL,
             estimated_value REAL NOT NULL,
             co2_factor_per_unit REAL NOT NULL,
-            is_completed INTEGER NOT NULL
+            is_completed INTEGER NOT NULL,
+            is_deferred INTEGER NOT NULL DEFAULT 0
           );
         ''');
 
@@ -68,6 +69,14 @@ class RescueLocalDb {
             total_value_recovered REAL NOT NULL
           );
         ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute('''
+            ALTER TABLE $rescueActionsTable
+            ADD COLUMN is_deferred INTEGER NOT NULL DEFAULT 0;
+          ''');
+        }
       },
     );
   }
@@ -136,6 +145,7 @@ class RescueLocalDb {
       'estimated_value': action.estimatedValue,
       'co2_factor_per_unit': action.co2FactorPerUnit,
       'is_completed': action.isCompleted ? 1 : 0,
+      'is_deferred': action.isDeferred ? 1 : 0,
     };
   }
 
@@ -174,6 +184,7 @@ class RescueLocalDb {
       estimatedValue: (row['estimated_value'] as num?)?.toDouble() ?? 0,
       co2FactorPerUnit: (row['co2_factor_per_unit'] as num?)?.toDouble() ?? 0,
       isCompleted: (row['is_completed'] as int? ?? 0) == 1,
+      isDeferred: (row['is_deferred'] as int? ?? 0) == 1,
     );
   }
 }

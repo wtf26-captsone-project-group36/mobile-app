@@ -54,6 +54,7 @@ class RescueAction {
   final double estimatedValue;
   final double co2FactorPerUnit;
   final bool isCompleted;
+  final bool isDeferred;
 
   const RescueAction({
     required this.id,
@@ -73,6 +74,7 @@ class RescueAction {
     required this.estimatedValue,
     required this.co2FactorPerUnit,
     required this.isCompleted,
+    required this.isDeferred,
   });
 
   RescueAction copyWith({
@@ -93,6 +95,7 @@ class RescueAction {
     double? estimatedValue,
     double? co2FactorPerUnit,
     bool? isCompleted,
+    bool? isDeferred,
   }) {
     return RescueAction(
       id: id ?? this.id,
@@ -113,6 +116,7 @@ class RescueAction {
       estimatedValue: estimatedValue ?? this.estimatedValue,
       co2FactorPerUnit: co2FactorPerUnit ?? this.co2FactorPerUnit,
       isCompleted: isCompleted ?? this.isCompleted,
+      isDeferred: isDeferred ?? this.isDeferred,
     );
   }
 
@@ -135,6 +139,7 @@ class RescueAction {
       'estimatedValue': estimatedValue,
       'co2FactorPerUnit': co2FactorPerUnit,
       'isCompleted': isCompleted,
+      'isDeferred': isDeferred,
     };
   }
 
@@ -171,6 +176,7 @@ class RescueAction {
       estimatedValue: (json['estimatedValue'] as num?)?.toDouble() ?? 0,
       co2FactorPerUnit: (json['co2FactorPerUnit'] as num?)?.toDouble() ?? 0,
       isCompleted: json['isCompleted'] == true,
+      isDeferred: json['isDeferred'] == true,
     );
   }
 }

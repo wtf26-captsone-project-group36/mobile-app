@@ -206,7 +206,7 @@ class ImpactDashboardPage extends StatelessWidget {
 
   Widget _buildBadgeList(Set<String> earnedBadgeCodes) {
     return Column(
-      children: RescueProvider.availableBadges.map((badge) {
+      children: RescueProvider.allBadges.map((badge) {
         final earned = earnedBadgeCodes.contains(badge.code);
         return Card(
           margin: const EdgeInsets.only(bottom: 8),

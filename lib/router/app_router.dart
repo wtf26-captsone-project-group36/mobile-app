@@ -37,6 +37,7 @@ import 'package:hervest_ai/bottom_navigation/inventory_page_four.dart';
 // Suggestions and impact
 import 'package:hervest_ai/bottom_navigation/suggestions_logistics_page.dart';
 import 'package:hervest_ai/bottom_navigation/sugg_impact_dashboard_page.dart';
+import 'package:hervest_ai/bottom_navigation/rescue_pledges_history_page.dart';
 
 // Cashflow flow
 import 'package:hervest_ai/bottom_navigation/cashflow_addexpense_page.dart';
@@ -153,17 +154,14 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/search',
       parentNavigatorKey: _rootNavigatorKey,
-      pageBuilder: (context, state) => const MaterialPage(
-        fullscreenDialog: true,
-        child: GlobalSearchPage(),
-      ),
+      pageBuilder: (context, state) =>
+          const MaterialPage(fullscreenDialog: true, child: GlobalSearchPage()),
     ),
 
     // Main app shell (bottom nav)
     StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) => MainNavigationScreen(
-        navigationShell: navigationShell,
-      ),
+      builder: (context, state, navigationShell) =>
+          MainNavigationScreen(navigationShell: navigationShell),
       branches: [
         StatefulShellBranch(
           navigatorKey: _shellNavigatorHomeKey,
@@ -220,8 +218,7 @@ final GoRouter appRouter = GoRouter(
                 GoRoute(
                   path: 'transactions',
                   parentNavigatorKey: _rootNavigatorKey,
-                  builder: (context, state) =>
-                      const TransactionHistoryPage(),
+                  builder: (context, state) => const TransactionHistoryPage(),
                 ),
               ],
             ),
@@ -233,6 +230,13 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: '/suggestions',
               builder: (context, state) => const SuggestionsScreen(),
+              routes: [
+                GoRoute(
+                  path: 'pledges',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (context, state) => const RescuePledgesHistoryPage(),
+                ),
+              ],
             ),
           ],
         ),

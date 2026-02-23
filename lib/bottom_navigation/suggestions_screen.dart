@@ -1,4 +1,8 @@
+import 'dart:math';
+
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hervest_ai/features/rescue/models/rescue_models.dart';
 import 'package:hervest_ai/features/rescue/services/rescue_suggestion_service.dart';
 import 'package:hervest_ai/provider/rescue_provider.dart';
@@ -16,19 +20,26 @@ class SuggestionsScreen extends StatefulWidget {
 class _SuggestionsScreenState extends State<SuggestionsScreen> {
   static const Color _primaryGreen = Color(0xFF006B4D);
   static const Color _creamBg = Color(0xFFFDFBF7);
+  late final ConfettiController _tileConfettiController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tileConfettiController = ConfettiController(
+      duration: const Duration(milliseconds: 700),
+    );
+  }
+
+  @override
+  void dispose() {
+    _tileConfettiController.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final rescue = context.read<RescueProvider>();
-    final badge = rescue.latestBadgeAward;
-    if (badge != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _showBadgeDialog(badge);
-        rescue.clearLatestBadgeAward();
-      });
-    }
     if (rescue.consumeAssistantOpenRequest()) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -41,6 +52,14 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
   Widget build(BuildContext context) {
     final rescue = context.watch<RescueProvider>();
     final suggestions = rescue.suggestions;
+    final pendingBadge = rescue.latestBadgeAward;
+    if (pendingBadge != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        rescue.clearLatestBadgeAward();
+        _showBadgeDialog(pendingBadge);
+      });
+    }
 
     return Scaffold(
       backgroundColor: _creamBg,
@@ -52,33 +71,62 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.black,
+        actions: [
+          IconButton(
+            onPressed: () => context.push('/suggestions/pledges'),
+            icon: const Icon(Icons.history),
+            tooltip: 'Pledges History',
+          ),
+        ],
       ),
-      body: !rescue.isReady
-          ? const Center(child: CircularProgressIndicator())
-          : suggestions.isEmpty
-          ? _buildEmptyState()
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildAIBanner(suggestions),
-                  const SizedBox(height: 14),
-                  const Text(
-                    'Recommended Rescue Actions',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+      body: Stack(
+        children: [
+          !rescue.isReady
+              ? const Center(child: CircularProgressIndicator())
+              : suggestions.isEmpty
+              ? _buildEmptyState()
+              : Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildAIBanner(suggestions),
+                      const SizedBox(height: 14),
+                      const Text(
+                        'Recommended Rescue Actions',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: suggestions.length,
+                          itemBuilder: (_, index) =>
+                              _buildSuggestionCard(suggestions[index]),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 10),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: suggestions.length,
-                      itemBuilder: (_, index) =>
-                          _buildSuggestionCard(suggestions[index]),
-                    ),
-                  ),
-                ],
+                ),
+          IgnorePointer(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConfettiWidget(
+                confettiController: _tileConfettiController,
+                blastDirection: pi / 2,
+                emissionFrequency: 0.12,
+                numberOfParticles: 18,
+                maxBlastForce: 16,
+                minBlastForce: 8,
+                shouldLoop: false,
+                gravity: 0.28,
               ),
             ),
+          ),
+        ],
+      ),
       floatingActionButton: const RescueAIAssistantButton(),
     );
   }
@@ -112,7 +160,8 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
   Widget _buildSuggestionCard(RescueSuggestion suggestion) {
     final rescue = context.watch<RescueProvider>();
     final action = rescue.latestActionForItem(suggestion.itemId);
-    final pending = action != null && !action.isCompleted;
+    final pending = action != null && !action.isCompleted && !action.isDeferred;
+    final deferred = action?.isDeferred == true;
     final completed = action?.isCompleted == true;
 
     return Card(
@@ -191,6 +240,12 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
                     icon: const Icon(Icons.check_circle_outline, size: 18),
                     label: const Text('Mark Completed'),
                   ),
+                if (pending)
+                  OutlinedButton.icon(
+                    onPressed: () => _markDeferred(suggestion.itemId),
+                    icon: const Icon(Icons.schedule_outlined, size: 18),
+                    label: const Text('Mark Considered'),
+                  ),
                 if (completed)
                   Chip(
                     avatar: const Icon(
@@ -200,6 +255,16 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
                     ),
                     label: const Text('Completed'),
                     backgroundColor: Colors.green.withValues(alpha: 0.1),
+                  ),
+                if (deferred)
+                  Chip(
+                    avatar: const Icon(
+                      Icons.schedule,
+                      size: 16,
+                      color: Colors.orange,
+                    ),
+                    label: const Text('Considered'),
+                    backgroundColor: Colors.orange.withValues(alpha: 0.12),
                   ),
               ],
             ),
@@ -463,6 +528,7 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
         handoverDetails: detailsController.text,
       );
       if (!mounted) return;
+      _tileConfettiController.play();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Rescue marked as completed.')),
       );
@@ -471,24 +537,129 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
     detailsController.dispose();
   }
 
-  Future<void> _showBadgeDialog(RescueBadge badge) async {
-    await showDialog<void>(
+  Future<void> _markDeferred(String itemId) async {
+    final reasonController = TextEditingController();
+    final confirm = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Badge Unlocked'),
-          content: Text(
-            'You earned "${badge.title}" for reaching ${badge.threshold} completed donations.',
+          title: const Text('Mark as Considered'),
+          content: TextField(
+            controller: reasonController,
+            maxLines: 2,
+            decoration: const InputDecoration(
+              labelText: 'Reason (optional)',
+              hintText: 'Partner unavailable, rescheduled, etc.',
+            ),
           ),
           actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
             FilledButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(context).pop(true),
               style: FilledButton.styleFrom(backgroundColor: _primaryGreen),
-              child: const Text('Nice'),
+              child: const Text('Save'),
             ),
           ],
         );
       },
+    );
+    if (confirm == true && mounted) {
+      await context.read<RescueProvider>().defer(
+        itemId: itemId,
+        reason: reasonController.text,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Marked as considered.')));
+    }
+    reasonController.dispose();
+  }
+
+  Future<void> _showBadgeDialog(RescueBadge badge) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return _BadgeCelebrationDialog(
+          badge: badge,
+          primaryGreen: _primaryGreen,
+        );
+      },
+    );
+  }
+}
+
+class _BadgeCelebrationDialog extends StatefulWidget {
+  final RescueBadge badge;
+  final Color primaryGreen;
+
+  const _BadgeCelebrationDialog({
+    required this.badge,
+    required this.primaryGreen,
+  });
+
+  @override
+  State<_BadgeCelebrationDialog> createState() =>
+      _BadgeCelebrationDialogState();
+}
+
+class _BadgeCelebrationDialogState extends State<_BadgeCelebrationDialog> {
+  late final ConfettiController _confettiController;
+
+  @override
+  void initState() {
+    super.initState();
+    _confettiController = ConfettiController(
+      duration: const Duration(milliseconds: 1800),
+    )..play();
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isCommitmentBadge =
+        widget.badge.code == RescueProvider.commitmentBadge.code;
+    final reason = isCommitmentBadge
+        ? 'You reached ${widget.badge.threshold} pledges.'
+        : 'You reached ${widget.badge.threshold} completed donations.';
+
+    return Stack(
+      alignment: Alignment.topCenter,
+      children: [
+        AlertDialog(
+          title: const Text('Badge Unlocked'),
+          content: Text('You earned "${widget.badge.title}". $reason'),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: FilledButton.styleFrom(
+                backgroundColor: widget.primaryGreen,
+              ),
+              child: const Text('Nice'),
+            ),
+          ],
+        ),
+        IgnorePointer(
+          child: ConfettiWidget(
+            confettiController: _confettiController,
+            blastDirection: pi / 2,
+            emissionFrequency: 0.06,
+            numberOfParticles: 28,
+            maxBlastForce: 18,
+            minBlastForce: 8,
+            shouldLoop: false,
+            gravity: 0.25,
+          ),
+        ),
+      ],
     );
   }
 }

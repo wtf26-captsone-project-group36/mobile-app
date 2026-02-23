@@ -11,16 +11,31 @@ class RescueProvider extends ChangeNotifier {
   static const String _actionsKey = 'rescue_actions_v1';
   static const String _badgeKey = 'rescue_badges_v1';
 
-  static const List<RescueBadge> availableBadges = [
-    RescueBadge(code: 'rescue_starter', title: 'Rescue Starter', threshold: 5),
-    RescueBadge(code: 'rescue_hero', title: 'Rescue Hero', threshold: 10),
+  static const RescueBadge commitmentBadge = RescueBadge(
+    code: 'commitment_builder',
+    title: 'Commitment Builder',
+    threshold: 5,
+  );
+
+  static const List<RescueBadge> donationBadges = [
+    RescueBadge(code: 'rescue_hero', title: 'Rescue Hero', threshold: 5),
     RescueBadge(
       code: 'community_champion',
       title: 'Community Champion',
-      threshold: 20,
+      threshold: 10,
     ),
-    RescueBadge(code: 'impact_leader', title: 'Impact Leader', threshold: 35),
-    RescueBadge(code: 'waste_warrior', title: 'Waste Warrior', threshold: 50),
+    RescueBadge(code: 'impact_leader', title: 'Impact Leader', threshold: 20),
+    RescueBadge(code: 'waste_warrior', title: 'Waste Warrior', threshold: 35),
+    RescueBadge(
+      code: 'sustainability_legend',
+      title: 'Sustainability Legend',
+      threshold: 50,
+    ),
+  ];
+
+  static List<RescueBadge> get allBadges => [
+    commitmentBadge,
+    ...donationBadges,
   ];
 
   List<RescueSuggestion> _suggestions = const [];
@@ -67,10 +82,10 @@ class RescueProvider extends ChangeNotifier {
 
   int get nextBadgeThreshold {
     final donations = impactMetrics.totalDonations;
-    for (final badge in availableBadges) {
+    for (final badge in donationBadges) {
       if (donations < badge.threshold) return badge.threshold;
     }
-    return availableBadges.last.threshold;
+    return donationBadges.last.threshold;
   }
 
   Future<void> initialize() async {
@@ -148,6 +163,7 @@ class RescueProvider extends ChangeNotifier {
       estimatedValue: suggestion.estimatedValue,
       co2FactorPerUnit: suggestion.co2FactorPerUnit,
       isCompleted: false,
+      isDeferred: false,
     );
 
     if (latest == null) {
@@ -157,6 +173,7 @@ class RescueProvider extends ChangeNotifier {
           .map((entry) => entry.id == latest.id ? action : entry)
           .toList();
     }
+    _awardCommitmentBadgeIfNeeded();
     await _persist();
     notifyListeners();
   }
@@ -170,6 +187,7 @@ class RescueProvider extends ChangeNotifier {
     if (latest == null || latest.isCompleted) return;
     final completed = latest.copyWith(
       isCompleted: true,
+      isDeferred: false,
       completedAt: DateTime.now(),
       note: completionNote?.trim().isNotEmpty == true
           ? completionNote!.trim()
@@ -182,6 +200,21 @@ class RescueProvider extends ChangeNotifier {
         .map((entry) => entry.id == latest.id ? completed : entry)
         .toList();
     _awardBadgesIfNeeded();
+    await _persist();
+    notifyListeners();
+  }
+
+  Future<void> defer({required String itemId, String? reason}) async {
+    final latest = latestActionForItem(itemId);
+    if (latest == null || latest.isCompleted) return;
+    final deferred = latest.copyWith(
+      isDeferred: true,
+      isCompleted: false,
+      note: reason?.trim().isNotEmpty == true ? reason!.trim() : latest.note,
+    );
+    _actions = _actions
+        .map((entry) => entry.id == latest.id ? deferred : entry)
+        .toList();
     await _persist();
     notifyListeners();
   }
@@ -257,12 +290,21 @@ class RescueProvider extends ChangeNotifier {
 
   void _awardBadgesIfNeeded() {
     final donations = impactMetrics.totalDonations;
-    for (final badge in availableBadges) {
+    for (final badge in donationBadges) {
       if (donations >= badge.threshold &&
           !_earnedBadgeCodes.contains(badge.code)) {
         _earnedBadgeCodes.add(badge.code);
         _latestBadgeAward = badge;
       }
+    }
+  }
+
+  void _awardCommitmentBadgeIfNeeded() {
+    final pledgeCount = _actions.length;
+    if (pledgeCount >= commitmentBadge.threshold &&
+        !_earnedBadgeCodes.contains(commitmentBadge.code)) {
+      _earnedBadgeCodes.add(commitmentBadge.code);
+      _latestBadgeAward = commitmentBadge;
     }
   }
 
