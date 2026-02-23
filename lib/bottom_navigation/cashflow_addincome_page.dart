@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:hervest_ai/provider/app_state_controller_mock.dart';
 import 'package:hervest_ai/widgets/app_input_styles.dart';
@@ -17,8 +18,15 @@ class _AddIncomePageState extends State<AddIncomePage> {
 
   final _amountController = TextEditingController();
   final _sourceController = TextEditingController();
-  final _dateController = TextEditingController(text: "Today");
+  final _dateController = TextEditingController();
   final _descriptionController = TextEditingController();
+  DateTime _selectedDate = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _dateController.text = _formatDisplayDate(_selectedDate);
+  }
 
   @override
   void dispose() {
@@ -38,7 +46,11 @@ class _AddIncomePageState extends State<AddIncomePage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.black,
+            size: 20,
+          ),
           onPressed: () => context.pop(),
         ),
         title: const Text(
@@ -70,16 +82,21 @@ class _AddIncomePageState extends State<AddIncomePage> {
                 controller: _amountController,
                 hint: "Enter amount",
                 helper: "Must be greater than 0.",
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
               ),
 
               const SizedBox(height: 20),
               _buildLabel("Date"),
               _buildTextField(
                 controller: _dateController,
-                hint: "Today",
+                hint: "Select date",
                 helper: null,
                 suffixIcon: Icons.calendar_today_outlined,
+                readOnly: true,
+                onTap: _pickDate,
+                onSuffixTap: _pickDate,
               ),
 
               const SizedBox(height: 20),
@@ -115,16 +132,23 @@ class _AddIncomePageState extends State<AddIncomePage> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 20),
       decoration: BoxDecoration(
-        color: primaryGreen.withOpacity(0.1),
+        color: primaryGreen.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
-          const Text("Amount", style: TextStyle(color: Colors.black54, fontSize: 12)),
+          const Text(
+            "Amount",
+            style: TextStyle(color: Colors.black54, fontSize: 12),
+          ),
           const SizedBox(height: 4),
           Text(
             "NGN ${_formatAmount(amount)}",
-            style: TextStyle(color: primaryGreen, fontSize: 32, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: primaryGreen,
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -143,6 +167,9 @@ class _AddIncomePageState extends State<AddIncomePage> {
     required String hint,
     required String? helper,
     IconData? suffixIcon,
+    VoidCallback? onTap,
+    VoidCallback? onSuffixTap,
+    bool readOnly = false,
     int maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
   }) {
@@ -152,19 +179,31 @@ class _AddIncomePageState extends State<AddIncomePage> {
         TextField(
           controller: controller,
           keyboardType: keyboardType,
+          readOnly: readOnly,
+          onTap: onTap,
           maxLines: maxLines,
           onChanged: (_) => setState(() {}),
           decoration: AppInputStyles.decoration(
             hintText: hint,
             suffixIcon: suffixIcon != null
-                ? Icon(suffixIcon, size: 18, color: AppInputStyles.textMuted)
+                ? IconButton(
+                    onPressed: onSuffixTap ?? onTap,
+                    icon: Icon(
+                      suffixIcon,
+                      size: 18,
+                      color: AppInputStyles.textMuted,
+                    ),
+                  )
                 : null,
           ),
         ),
         if (helper != null)
           Padding(
             padding: const EdgeInsets.only(top: 4.0),
-            child: Text(helper, style: const TextStyle(color: Colors.black45, fontSize: 11)),
+            child: Text(
+              helper,
+              style: const TextStyle(color: Colors.black45, fontSize: 11),
+            ),
           ),
       ],
     );
@@ -177,7 +216,9 @@ class _AddIncomePageState extends State<AddIncomePage> {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryGreen,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
         onPressed: () {
           final amount = _parseAmount(_amountController.text);
@@ -194,11 +235,11 @@ class _AddIncomePageState extends State<AddIncomePage> {
               ? _dateController.text.trim()
               : "Today";
           context.read<AppStateController>().addTransaction(
-                title: title,
-                amount: "NGN ${_formatAmount(amount)}",
-                type: "Income",
-                date: date,
-              );
+            title: title,
+            amount: "NGN ${_formatAmount(amount)}",
+            type: "Income",
+            date: date,
+          );
           context.pop();
         },
         child: const Text(
@@ -212,6 +253,24 @@ class _AddIncomePageState extends State<AddIncomePage> {
   double _parseAmount(String raw) {
     final cleaned = raw.replaceAll(RegExp(r'[^0-9.-]'), '');
     return double.tryParse(cleaned) ?? 0;
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _selectedDate = picked;
+      _dateController.text = _formatDisplayDate(picked);
+    });
+  }
+
+  String _formatDisplayDate(DateTime date) {
+    return DateFormat('yyyy-MM-dd').format(date);
   }
 
   String _formatAmount(double value) {

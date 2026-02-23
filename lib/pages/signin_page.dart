@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
@@ -143,7 +143,9 @@ class _LoginPageState extends State<LoginPage> {
                     final email = _emailController.text.trim();
                     final inferredName = displayNameFromEmail(email);
                     await profile.updateProfile(
-                      fullName: profile.fullName.isNotEmpty ? profile.fullName : inferredName,
+                      fullName: profile.fullName.isNotEmpty
+                          ? profile.fullName
+                          : inferredName,
                       email: email,
                       phone: profile.phone,
                       businessName: profile.businessName,
@@ -153,9 +155,12 @@ class _LoginPageState extends State<LoginPage> {
                     );
 
                     if (context.mounted) {
-                      final appState = Provider.of<AppStateController>(context, listen: false);
+                      final appState = Provider.of<AppStateController>(
+                        context,
+                        listen: false,
+                      );
                       appState.setUserName(displayNameFromEmail(email));
-                      
+
                       context.go('/dashboard');
                     }
                   },

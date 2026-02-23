@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class AuthFormField extends StatelessWidget {
+class AuthFormField extends StatefulWidget {
   const AuthFormField({
     super.key,
     required this.label,
@@ -43,60 +43,96 @@ class AuthFormField extends StatelessWidget {
   final Widget? suffixIcon;
 
   @override
+  State<AuthFormField> createState() => _AuthFormFieldState();
+}
+
+class _AuthFormFieldState extends State<AuthFormField> {
+  late bool _isObscured;
+
+  @override
+  void initState() {
+    super.initState();
+    _isObscured = widget.obscureText;
+  }
+
+  @override
+  void didUpdateWidget(covariant AuthFormField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.obscureText != widget.obscureText) {
+      _isObscured = widget.obscureText;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final inputSuffix = widget.obscureText
+        ? IconButton(
+            icon: Icon(
+              _isObscured
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+            ),
+            onPressed: () => setState(() => _isObscured = !_isObscured),
+            tooltip: _isObscured ? 'Show password' : 'Hide password',
+          )
+        : widget.suffixIcon;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          widget.label,
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: labelColor,
+            color: widget.labelColor,
           ),
         ),
         const SizedBox(height: 8),
         TextFormField(
-          controller: controller,
-          focusNode: focusNode,
-          keyboardType: keyboardType,
-          textInputAction: textInputAction,
-          autocorrect: autocorrect,
-          obscureText: obscureText,
-          onFieldSubmitted: onFieldSubmitted,
-          validator: validator,
+          controller: widget.controller,
+          focusNode: widget.focusNode,
+          keyboardType: widget.keyboardType,
+          textInputAction: widget.textInputAction,
+          autocorrect: widget.autocorrect,
+          obscureText: _isObscured,
+          onFieldSubmitted: widget.onFieldSubmitted,
+          validator: widget.validator,
           style: TextStyle(
             fontSize: 15,
-            color: textColor,
+            color: widget.textColor,
             fontWeight: FontWeight.w400,
           ),
           decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: TextStyle(color: hintColor, fontSize: 14),
+            hintText: widget.hintText,
+            hintStyle: TextStyle(color: widget.hintColor, fontSize: 14),
             filled: true,
-            fillColor: fillColor,
-            suffixIcon: suffixIcon,
+            fillColor: widget.fillColor,
+            suffixIcon: inputSuffix,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 16,
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: borderColor, width: 1.2),
+              borderSide: BorderSide(color: widget.borderColor, width: 1.2),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: focusedBorderColor, width: 1.8),
+              borderSide: BorderSide(
+                color: widget.focusedBorderColor,
+                width: 1.8,
+              ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: errorColor, width: 1.2),
+              borderSide: BorderSide(color: widget.errorColor, width: 1.2),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: errorColor, width: 1.8),
+              borderSide: BorderSide(color: widget.errorColor, width: 1.8),
             ),
-            errorStyle: TextStyle(color: errorColor, fontSize: 12),
+            errorStyle: TextStyle(color: widget.errorColor, fontSize: 12),
           ),
         ),
       ],

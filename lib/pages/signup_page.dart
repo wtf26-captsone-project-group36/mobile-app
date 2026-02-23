@@ -163,15 +163,23 @@ class _SignUpPageState extends State<SignUpPage> {
                 child: ElevatedButton(
                   onPressed: () async {
                     final fullName = _fullNameController.text.trim();
-                    final appState = Provider.of<AppStateController>(context, listen: false);
-                    final profile = Provider.of<ProfileController>(context, listen: false);
+                    final appState = Provider.of<AppStateController>(
+                      context,
+                      listen: false,
+                    );
+                    final profile = Provider.of<ProfileController>(
+                      context,
+                      listen: false,
+                    );
                     if (fullName.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please enter your full name')),
+                        const SnackBar(
+                          content: Text('Please enter your full name'),
+                        ),
                       );
                       return;
                     }
-                    
+
                     // Store user name and update provider
                     await AppSessionStore.instance.setUserName(fullName);
                     await profile.updateProfile(
@@ -184,7 +192,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       location: profile.location,
                     );
                     appState.setUserName(fullName);
-                    
+
                     // Clear guest mode and mark as logged in
                     await AppSessionStore.instance.setGuestMode(false);
                     await AppSessionStore.instance.setLoggedIn(true);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:hervest_ai/provider/app_state_controller_mock.dart';
 import 'package:hervest_ai/widgets/app_input_styles.dart';
@@ -17,8 +18,15 @@ class _AddExpensePageState extends State<AddExpensePage> {
 
   final _amountController = TextEditingController();
   final _categoryController = TextEditingController();
-  final _dateController = TextEditingController(text: "Today");
+  final _dateController = TextEditingController();
   final _descriptionController = TextEditingController();
+  DateTime _selectedDate = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _dateController.text = _formatDisplayDate(_selectedDate);
+  }
 
   @override
   void dispose() {
@@ -38,7 +46,11 @@ class _AddExpensePageState extends State<AddExpensePage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.black,
+            size: 20,
+          ),
           onPressed: () => context.pop(),
         ),
         title: const Text(
@@ -70,7 +82,9 @@ class _AddExpensePageState extends State<AddExpensePage> {
                 controller: _amountController,
                 hint: "Enter amount",
                 helper: "Must be greater than 0.",
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
               ),
 
               const SizedBox(height: 20),
@@ -85,9 +99,12 @@ class _AddExpensePageState extends State<AddExpensePage> {
               _buildLabel("Date"),
               _buildTextField(
                 controller: _dateController,
-                hint: "Today",
+                hint: "Select date",
                 helper: "Select when this expense occurred.",
                 suffixIcon: Icons.calendar_today_outlined,
+                readOnly: true,
+                onTap: _pickDate,
+                onSuffixTap: _pickDate,
               ),
 
               const SizedBox(height: 20),
@@ -119,16 +136,23 @@ class _AddExpensePageState extends State<AddExpensePage> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 20),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0F2F1).withOpacity(0.5),
+        color: const Color(0xFFE0F2F1).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
-          const Text("Amount", style: TextStyle(color: Colors.black54, fontSize: 12)),
+          const Text(
+            "Amount",
+            style: TextStyle(color: Colors.black54, fontSize: 12),
+          ),
           const SizedBox(height: 4),
           Text(
             "NGN ${_formatAmount(amount)}",
-            style: TextStyle(color: primaryGreen, fontSize: 32, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: primaryGreen,
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -147,6 +171,9 @@ class _AddExpensePageState extends State<AddExpensePage> {
     required String hint,
     required String? helper,
     IconData? suffixIcon,
+    VoidCallback? onTap,
+    VoidCallback? onSuffixTap,
+    bool readOnly = false,
     int maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
   }) {
@@ -156,19 +183,31 @@ class _AddExpensePageState extends State<AddExpensePage> {
         TextField(
           controller: controller,
           keyboardType: keyboardType,
+          readOnly: readOnly,
+          onTap: onTap,
           maxLines: maxLines,
           onChanged: (_) => setState(() {}),
           decoration: AppInputStyles.decoration(
             hintText: hint,
             suffixIcon: suffixIcon != null
-                ? Icon(suffixIcon, size: 18, color: AppInputStyles.textMuted)
+                ? IconButton(
+                    onPressed: onSuffixTap ?? onTap,
+                    icon: Icon(
+                      suffixIcon,
+                      size: 18,
+                      color: AppInputStyles.textMuted,
+                    ),
+                  )
                 : null,
           ),
         ),
         if (helper != null)
           Padding(
             padding: const EdgeInsets.only(top: 4.0),
-            child: Text(helper, style: const TextStyle(color: Colors.black45, fontSize: 11)),
+            child: Text(
+              helper,
+              style: const TextStyle(color: Colors.black45, fontSize: 11),
+            ),
           ),
       ],
     );
@@ -182,7 +221,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         side: const BorderSide(color: Color(0xFFE0F2F1)),
-        backgroundColor: const Color(0xFFE0F2F1).withOpacity(0.3),
+        backgroundColor: const Color(0xFFE0F2F1).withValues(alpha: 0.3),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
@@ -195,7 +234,9 @@ class _AddExpensePageState extends State<AddExpensePage> {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryGreen,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
         onPressed: () {
           final amount = _parseAmount(_amountController.text);
@@ -212,11 +253,11 @@ class _AddExpensePageState extends State<AddExpensePage> {
               ? _dateController.text.trim()
               : "Today";
           context.read<AppStateController>().addTransaction(
-                title: title,
-                amount: "NGN ${_formatAmount(amount)}",
-                type: "Expense",
-                date: date,
-              );
+            title: title,
+            amount: "NGN ${_formatAmount(amount)}",
+            type: "Expense",
+            date: date,
+          );
           context.pop();
         },
         child: const Text(
@@ -242,5 +283,23 @@ class _AddExpensePageState extends State<AddExpensePage> {
       if (position > 1 && position % 3 == 1) buffer.write(',');
     }
     return buffer.toString();
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _selectedDate = picked;
+      _dateController.text = _formatDisplayDate(picked);
+    });
+  }
+
+  String _formatDisplayDate(DateTime date) {
+    return DateFormat('yyyy-MM-dd').format(date);
   }
 }
