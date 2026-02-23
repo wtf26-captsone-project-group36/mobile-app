@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:hervest_ai/provider/inventory_provider.dart';
 import 'package:hervest_ai/provider/app_state_controller_mock.dart';
+import 'package:hervest_ai/provider/rescue_provider.dart';
 import 'package:hervest_ai/models/inventory_model.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -56,7 +57,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
                 SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       _buildTabSwitcher(),
@@ -80,7 +84,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildProfileRow(String name) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
-    
+
     // Responsive logo size
     final logoWidth = isMobile ? 45.0 : 55.0;
     final logoHeight = isMobile ? 35.0 : 42.0;
@@ -118,7 +122,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       'assets/hervbypd.png',
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        return Icon(Icons.image, color: Colors.white, size: isMobile ? 16 : 20);
+                        return Icon(
+                          Icons.image,
+                          color: Colors.white,
+                          size: isMobile ? 16 : 20,
+                        );
                       },
                     ),
                   ),
@@ -176,7 +184,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           backgroundColor: primaryGreen,
           child: Text(
             name.isNotEmpty ? name[0].toUpperCase() : "U",
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
           ),
         ),
       ),
@@ -184,29 +196,102 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildOverviewGrid(bool isWide, InventoryProvider inv) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: isWide ? 4 : 2,
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 1.1,
+    return Column(
       children: [
-        // Real data pulled from InventoryProvider
-        _statCard("Inventory", "${inv.items.length} Items", Icons.inventory_2_outlined, Colors.blue, '/inventory'),
-        _statCard("Cashflow", "₦${(inv.totalLedgerValue / 1000).toStringAsFixed(0)}k", Icons.account_balance_wallet_outlined, Colors.orange, '/cashflow'),
-        _statCard("AI Alerts", "${inv.criticalCount} Critical", Icons.auto_awesome_outlined, Colors.red, '/suggestions'),
-        _statCard("Impact", "50 Points", Icons.volunteer_activism_outlined, Colors.teal, '/impact-stats'),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: isWide ? 4 : 2,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 1.1,
+          children: [
+            // Real data pulled from InventoryProvider
+            _statCard(
+              "Inventory",
+              "${inv.items.length} Items",
+              Icons.inventory_2_outlined,
+              Colors.blue,
+              '/inventory',
+            ),
+            _statCard(
+              "Cashflow",
+              "NGN ${(inv.totalLedgerValue / 1000).toStringAsFixed(0)}k",
+              Icons.account_balance_wallet_outlined,
+              Colors.orange,
+              '/cashflow',
+            ),
+            _statCard(
+              "AI Alerts",
+              "${inv.criticalCount} Critical",
+              Icons.auto_awesome_outlined,
+              Colors.red,
+              '/suggestions',
+            ),
+            _statCard(
+              "Impact",
+              "50 Points",
+              Icons.volunteer_activism_outlined,
+              Colors.teal,
+              '/impact-stats',
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildRescueAssistantEntry(),
       ],
+    );
+  }
+
+  Widget _buildRescueAssistantEntry() {
+    return GestureDetector(
+      onTap: () {
+        context.read<RescueProvider>().requestAssistantOpen();
+        context.go('/suggestions');
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: primaryGreen.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: primaryGreen.withValues(alpha: 0.25)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.smart_toy_outlined, color: primaryGreen),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Rescue Assistant: Ask what to rescue today',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            Chip(
+              label: const Text('Open'),
+              visualDensity: VisualDensity.compact,
+              backgroundColor: Colors.white,
+              labelStyle: TextStyle(color: primaryGreen),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildRecentActivity(InventoryProvider inv) {
     // Only show items that are warning or expired
-    final items = inv.items.where((i) => i.status != ItemStatus.normal).toList();
+    final items = inv.items
+        .where((i) => i.status != ItemStatus.normal)
+        .toList();
 
     if (items.isEmpty) {
-      return const Center(child: Text("No recent critical activity", style: TextStyle(color: Colors.grey)));
+      return const Center(
+        child: Text(
+          "No recent critical activity",
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
     }
 
     return ListView.builder(
@@ -218,10 +303,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return ListTile(
           contentPadding: EdgeInsets.zero,
           leading: CircleAvatar(
-            backgroundColor: item.status == ItemStatus.expired ? Colors.red.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
-            child: Icon(Icons.history, size: 18, color: item.status == ItemStatus.expired ? Colors.red : Colors.orange),
+            backgroundColor: item.status == ItemStatus.expired
+                ? Colors.red.withOpacity(0.1)
+                : Colors.orange.withOpacity(0.1),
+            child: Icon(
+              Icons.history,
+              size: 18,
+              color: item.status == ItemStatus.expired
+                  ? Colors.red
+                  : Colors.orange,
+            ),
           ),
-          title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(
+            item.name,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
           subtitle: Text(item.errorMessage ?? "Action required soon"),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => context.push('/inventory'),
@@ -231,7 +327,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // ... (Keep existing _buildSearchTrigger, _buildTabSwitcher, _tabItem, and _statCard)
-  
+
   Widget _buildSearchTrigger(BuildContext context) {
     return GestureDetector(
       onTap: () => context.push('/search'),
@@ -246,7 +342,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               color: Colors.black.withOpacity(0.03),
               blurRadius: 15,
               offset: const Offset(0, 5),
-            )
+            ),
           ],
         ),
         child: const Row(
@@ -272,10 +368,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        children: [
-          _tabItem("Overview", 0),
-          _tabItem("Recent Activity", 1),
-        ],
+        children: [_tabItem("Overview", 0), _tabItem("Recent Activity", 1)],
       ),
     );
   }
@@ -303,7 +396,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _statCard(String title, String value, IconData icon, Color color, String route) {
+  Widget _statCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+    String route,
+  ) {
     return _StatCard(
       title: title,
       value: value,
@@ -340,8 +439,9 @@ class _StatCardState extends State<_StatCard> {
   @override
   Widget build(BuildContext context) {
     final bool active = _isHovered || _isPressed;
-    final Color borderColor =
-        active ? widget.color.withOpacity(0.55) : widget.color.withOpacity(0.18);
+    final Color borderColor = active
+        ? widget.color.withOpacity(0.55)
+        : widget.color.withOpacity(0.18);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -405,16 +505,6 @@ class _StatCardState extends State<_StatCard> {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
 
 /* MAIN import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -728,8 +818,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 */
-
-
 
 /*import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';

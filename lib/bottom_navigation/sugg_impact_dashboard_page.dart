@@ -1,18 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hervest_ai/features/rescue/models/rescue_models.dart';
+import 'package:hervest_ai/provider/rescue_provider.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class ImpactDashboardPage extends StatelessWidget {
   const ImpactDashboardPage({super.key});
 
-  final Color primaryGreen = const Color(0xFF006B4D);
-  final Color creamBg = const Color(0xFFFDFBF7);
+  static const Color _primaryGreen = Color(0xFF006B4D);
+  static const Color _creamBg = Color(0xFFFDFBF7);
 
   @override
   Widget build(BuildContext context) {
+    final rescue = context.watch<RescueProvider>();
+    final metrics = rescue.impactMetrics;
+    final badges = rescue.earnedBadgeCodes;
+
     return Scaffold(
-      backgroundColor: creamBg,
+      backgroundColor: _creamBg,
       appBar: AppBar(
-        title: const Text("Sustainability Impact", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Sustainability Impact',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.black,
@@ -21,113 +32,206 @@ class ImpactDashboardPage extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeroStats(),
-              const SizedBox(height: 24),
-              const Text("Detailed Metrics", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              _buildMetricGrid(),
-              const SizedBox(height: 32),
-              const Text("Beneficiary Partners", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              _buildPartnerList(),
-            ],
-          ),
-        ),
-      ),
+      body: !rescue.isReady
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHero(metrics),
+                  const SizedBox(height: 22),
+                  const Text(
+                    'Detailed Metrics',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 14),
+                  _buildMetricGrid(metrics),
+                  const SizedBox(height: 24),
+                  _buildMilestoneCard(metrics, rescue.nextBadgeThreshold),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Earned Badges',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildBadgeList(badges),
+                ],
+              ),
+            ),
     );
   }
 
-  Widget _buildHeroStats() {
+  Widget _buildHero(ImpactMetrics metrics) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: primaryGreen,
-        borderRadius: BorderRadius.circular(20),
-        image: DecorationImage(
-          image: const NetworkImage('https://www.transparenttextures.com/patterns/leaf.png'),
-          opacity: 0.1,
-          repeat: ImageRepeat.repeat,
-        ),
+        color: _primaryGreen,
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
         children: [
-          const Text("Total Food Value Saved", style: TextStyle(color: Colors.white70, fontSize: 14)),
+          const Text(
+            'Total Value Recovered',
+            style: TextStyle(color: Colors.white70, fontSize: 13),
+          ),
           const SizedBox(height: 8),
-          const Text("₦1,240,500", style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(20)),
-            child: const Text("Top 5% of Sustainable Retailers", style: TextStyle(color: Colors.white, fontSize: 12)),
-          )
+          Text(
+            'NGN ${NumberFormat('#,##0.00').format(metrics.totalValueRecovered)}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 30,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '${metrics.totalCompletedRescues} completed rescues',
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildMetricGrid() {
+  Widget _buildMetricGrid(ImpactMetrics metrics) {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 1.5,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 1.45,
       children: [
-        _buildSmallStatCard("CO2 Avoided", "420 kg", Icons.cloud_done_outlined, Colors.blue),
-        _buildSmallStatCard("Meals Provided", "1,850", Icons.restaurant, Colors.orange),
-        _buildSmallStatCard("Waste Diverted", "92%", Icons.recycling, Colors.green),
-        _buildSmallStatCard("Social Credits", "2,400", Icons.stars, Colors.amber),
+        _metricCard(
+          label: 'CO2 Avoided',
+          value: '${metrics.totalCo2AvoidedKg.toStringAsFixed(1)} kg',
+          icon: Icons.cloud_done_outlined,
+          color: Colors.blue,
+        ),
+        _metricCard(
+          label: 'Donations',
+          value: metrics.totalDonations.toString(),
+          icon: Icons.favorite_border,
+          color: Colors.redAccent,
+        ),
+        _metricCard(
+          label: 'Surplus Sales',
+          value: metrics.totalSurplusSales.toString(),
+          icon: Icons.sell_outlined,
+          color: Colors.deepOrange,
+        ),
+        _metricCard(
+          label: 'Total Rescues',
+          value: metrics.totalCompletedRescues.toString(),
+          icon: Icons.inventory_2_outlined,
+          color: Colors.green,
+        ),
       ],
     );
   }
 
-  Widget _buildSmallStatCard(String label, String value, IconData icon, Color color) {
+  Widget _metricCard({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 20),
+          Icon(icon, color: color),
           const SizedBox(height: 8),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.black54, fontSize: 12),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPartnerList() {
-    final partners = [
-      {"name": "Lagos Food Bank", "count": "12 Donations"},
-      {"name": "Hope IDP Camp", "count": "5 Donations"},
-      {"name": "GreenLife Kitchen", "count": "8 Donations"},
-    ];
+  Widget _buildMilestoneCard(ImpactMetrics metrics, int nextBadgeThreshold) {
+    final remaining = nextBadgeThreshold - metrics.totalDonations;
+    final progress = nextBadgeThreshold == 0
+        ? 1.0
+        : (metrics.totalDonations / nextBadgeThreshold).clamp(0.0, 1.0);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Donation Milestone',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            remaining <= 0
+                ? 'You reached this milestone.'
+                : '$remaining donation(s) to next badge at $nextBadgeThreshold.',
+            style: const TextStyle(color: Colors.black54),
+          ),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+            value: progress,
+            minHeight: 8,
+            color: Colors.amber,
+            backgroundColor: Colors.amber.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(999),
+          ),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildBadgeList(Set<String> earnedBadgeCodes) {
     return Column(
-      children: partners.map((p) => Card(
-        margin: const EdgeInsets.only(bottom: 8),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: ListTile(
-          leading: const CircleAvatar(backgroundColor: Color(0xFFE0F2F1), child: Icon(Icons.business, color: Color(0xFF006B4D))),
-          title: Text(p['name']!, style: const TextStyle(fontWeight: FontWeight.w600)),
-          subtitle: Text(p['count']!, style: const TextStyle(fontSize: 12)),
-          trailing: const Icon(Icons.chevron_right, size: 16),
-        ),
-      )).toList(),
+      children: RescueProvider.availableBadges.map((badge) {
+        final earned = earnedBadgeCodes.contains(badge.code);
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: earned
+                  ? Colors.amber.withValues(alpha: 0.2)
+                  : Colors.black.withValues(alpha: 0.05),
+              child: Icon(
+                earned ? Icons.workspace_premium_rounded : Icons.lock_outline,
+                color: earned ? Colors.amber.shade800 : Colors.black45,
+              ),
+            ),
+            title: Text(badge.title),
+            subtitle: Text('${badge.threshold} completed donations'),
+            trailing: Text(
+              earned ? 'Earned' : 'Locked',
+              style: TextStyle(
+                color: earned ? Colors.green : Colors.black45,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

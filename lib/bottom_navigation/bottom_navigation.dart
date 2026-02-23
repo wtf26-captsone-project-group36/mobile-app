@@ -4,10 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({
-    super.key,
-    required this.navigationShell,
-  });
+  const MainNavigationScreen({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
@@ -50,9 +47,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 ),
               ],
             ),
-          Expanded(
-            child: widget.navigationShell,
-          ),
+          Expanded(child: widget.navigationShell),
         ],
       ),
       bottomNavigationBar: ConvexAppBar(
