@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -28,17 +29,26 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   // Simple mock settings kept active (easy and useful)
   static const String _emailAlertsKey = 'settings_email_alerts';
   static const String _whatsappAlertsKey = 'settings_whatsapp_alerts';
+  static const String _channelsLastUpdatedKey =
+      'settings_channels_last_updated';
   static const String _lastExportAtKey = 'settings_last_export_at';
   static const String _lastExportTypeKey = 'settings_last_export_type';
   static const String _logoAssetPath = 'assets/hervbypd.png';
 
   bool _emailAlerts = true;
   bool _whatsappAlerts = false;
+  bool _savedEmailAlerts = true;
+  bool _savedWhatsappAlerts = false;
   bool _isLoaded = false;
   bool _isSavingChannels = false;
   bool _isExporting = false;
+  String _channelsLastUpdatedAt = '';
   String _lastExportAt = '';
   String _lastExportType = '';
+
+  bool get _hasChannelChanges =>
+      _emailAlerts != _savedEmailAlerts ||
+      _whatsappAlerts != _savedWhatsappAlerts;
 
   @override
   void initState() {
@@ -51,6 +61,9 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     setState(() {
       _emailAlerts = prefs.getBool(_emailAlertsKey) ?? _emailAlerts;
       _whatsappAlerts = prefs.getBool(_whatsappAlertsKey) ?? _whatsappAlerts;
+      _savedEmailAlerts = _emailAlerts;
+      _savedWhatsappAlerts = _whatsappAlerts;
+      _channelsLastUpdatedAt = prefs.getString(_channelsLastUpdatedKey) ?? '';
       _lastExportAt = prefs.getString(_lastExportAtKey) ?? '';
       _lastExportType = prefs.getString(_lastExportTypeKey) ?? '';
       _isLoaded = true;
@@ -62,11 +75,126 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_emailAlertsKey, _emailAlerts);
     await prefs.setBool(_whatsappAlertsKey, _whatsappAlerts);
+    final updatedAt = DateTime.now().toIso8601String();
+    await prefs.setString(_channelsLastUpdatedKey, updatedAt);
+    await Future.delayed(const Duration(milliseconds: 700));
     if (!mounted) return;
-    setState(() => _isSavingChannels = false);
+    setState(() {
+      _savedEmailAlerts = _emailAlerts;
+      _savedWhatsappAlerts = _whatsappAlerts;
+      _channelsLastUpdatedAt = updatedAt;
+      _isSavingChannels = false;
+    });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Notification channels updated')),
     );
+  }
+
+  void _discardChannelChanges() {
+    setState(() {
+      _emailAlerts = _savedEmailAlerts;
+      _whatsappAlerts = _savedWhatsappAlerts;
+    });
+  }
+
+  Future<void> _confirmAndSaveChannels() async {
+    if (!_hasChannelChanges || _isSavingChannels) return;
+    final didConfirm = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return Dialog(
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.black.withValues(alpha: 0.08),
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Apply notification changes?',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    ..._buildChannelChangeSummary(),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Turning channels off may reduce how quickly you receive low-stock alerts.',
+                      style: TextStyle(
+                        color: Colors.black.withValues(alpha: 0.65),
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(false),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kPrimaryGreen,
+                              foregroundColor: Colors.white,
+                            ),
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(true),
+                            child: const Text('Save changes'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (didConfirm == true) {
+      await _saveChannels();
+    }
+  }
+
+  List<Widget> _buildChannelChangeSummary() {
+    final summary = <Widget>[];
+    if (_emailAlerts != _savedEmailAlerts) {
+      summary.add(
+        Text(
+          'Email updates: ${_savedEmailAlerts ? 'On' : 'Off'} -> ${_emailAlerts ? 'On' : 'Off'}',
+        ),
+      );
+    }
+    if (_whatsappAlerts != _savedWhatsappAlerts) {
+      summary.add(
+        Text(
+          'WhatsApp updates: ${_savedWhatsappAlerts ? 'On' : 'Off'} -> ${_whatsappAlerts ? 'On' : 'Off'}',
+        ),
+      );
+    }
+    return summary;
   }
 
   Future<void> _exportBusinessReport(ExportReportType reportType) async {
@@ -520,19 +648,86 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                       onChanged: (value) =>
                           setState(() => _whatsappAlerts = value),
                     ),
+                    Row(
+                      children: [
+                        _buildStatusPill(
+                          label: _emailAlerts
+                              ? 'Email verified'
+                              : 'Email paused',
+                          active: _emailAlerts,
+                        ),
+                        const SizedBox(width: 8),
+                        _buildStatusPill(
+                          label: _whatsappAlerts
+                              ? 'WhatsApp connected'
+                              : 'WhatsApp disconnected',
+                          active: _whatsappAlerts,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (_channelsLastUpdatedAt.isNotEmpty)
+                      Text(
+                        'Last updated: ${_formatExportedAt(DateTime.parse(_channelsLastUpdatedAt))}',
+                        style: const TextStyle(
+                          color: Colors.black54,
+                          fontSize: 12,
+                        ),
+                      ),
+                    const SizedBox(height: 10),
+                    if (_hasChannelChanges)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: kPrimaryGreen.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: kPrimaryGreen.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.info_outline, size: 18),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                'You have unsaved channel changes.',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: _isSavingChannels
+                                  ? null
+                                  : _discardChannelChanges,
+                              child: const Text('Discard'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 10),
                     SizedBox(
                       width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: _isSavingChannels ? null : _saveChannels,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kPrimaryGreen,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: _isSavingChannels || !_hasChannelChanges
+                            ? null
+                            : _confirmAndSaveChannels,
                         child: _isSavingChannels
                             ? const SizedBox(
                                 height: 16,
                                 width: 16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
                                 ),
                               )
-                            : const Text('Save Preferences'),
+                            : const Text('Save Channel Preferences'),
                       ),
                     ),
                   ],
@@ -576,6 +771,31 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
           const SizedBox(height: 10),
           ...children,
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatusPill({required String label, required bool active}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: active
+            ? kPrimaryGreen.withValues(alpha: 0.12)
+            : Colors.black.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: active
+              ? kPrimaryGreen.withValues(alpha: 0.24)
+              : Colors.black.withValues(alpha: 0.12),
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          color: active ? kPrimaryGreen : Colors.black87,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
