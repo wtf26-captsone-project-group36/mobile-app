@@ -21,7 +21,6 @@ class ExpenseApiService {
     final query = '?${params.join('&')}';
     final response = await _request(
       method: 'GET',
-      path: '/expenses',
       path: '/expenses$query',
       accessToken: accessToken,
     );
@@ -57,7 +56,6 @@ class ExpenseApiService {
     final query = params.isNotEmpty ? '?${params.join('&')}' : '';
     final response = await _request(
       method: 'GET',
-      path: '/expenses/summary',
       path: '/expenses/summary$query',
       accessToken: accessToken,
     );

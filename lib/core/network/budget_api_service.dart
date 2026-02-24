@@ -8,10 +8,16 @@ class BudgetApiService {
 
   Future<List<Map<String, dynamic>>> getBudgets({
     required String accessToken,
+    bool? isActive,
+    String? category,
   }) async {
+    final params = <String>[];
+    if (isActive != null) params.add('is_active=$isActive');
+    if (category != null && category.isNotEmpty) params.add('category=$category');
+    final query = params.isNotEmpty ? '?${params.join('&')}' : '';
     final response = await _request(
       method: 'GET',
-      path: '/budgets',
+      path: '/budgets$query',
       accessToken: accessToken,
     );
     final rows = response['budgets'];
