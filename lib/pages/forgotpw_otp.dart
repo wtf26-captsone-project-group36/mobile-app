@@ -1,12 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hervest_ai/core/network/auth_api_service.dart';
 
 /// EnterCodeScreen
 /// Screen 3 of 4 in the forgot password flow.
 /// User enters the 6-digit OTP sent to their email.
-/// Design: HerVest AI â€” cream background, dark green primary, gold accent.
-/// Backend: Supabase â€” verify via `supabase.auth.verifyOTP(email, token, type: 'recovery')`
+/// Design: HerVest AI — cream background, dark green primary, gold accent.
+/// Backend: Supabase — verify via `supabase.auth.verifyOTP(email, token, type: 'recovery')`
 
 class EnterCodeScreen extends StatefulWidget {
   final String email;
@@ -19,7 +20,7 @@ class EnterCodeScreen extends StatefulWidget {
 
 class _EnterCodeScreenState extends State<EnterCodeScreen>
     with SingleTickerProviderStateMixin {
-  // â”€â”€â”€ Theme Colors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Theme Colors ─────────────────────────────────────────────────────────
   static const Color kCream = Color(0xFFF5F5DC);
   static const Color kDarkGreen = Color(0xFF1A5C3A);
   static const Color kMediumGreen = Color(0xFF2E7D52);
@@ -28,10 +29,10 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
   static const Color kError = Color(0xFFDC2626);
   static const Color kInputFill = Color(0xFFFFFFFF);
 
-  // â”€â”€â”€ OTP Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── OTP Config ───────────────────────────────────────────────────────────
   static const int kOtpLength = 6;
 
-  // â”€â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── State ────────────────────────────────────────────────────────────────
   final List<TextEditingController> _controllers = List.generate(
     kOtpLength,
     (_) => TextEditingController(),
@@ -83,12 +84,12 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
     super.dispose();
   }
 
-  // â”€â”€â”€ Get full OTP string â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Get full OTP string ──────────────────────────────────────────────────
   String get _otpValue => _controllers.map((c) => c.text).join();
 
   bool get _isComplete => _otpValue.length == kOtpLength;
 
-  // â”€â”€â”€ Handle digit input â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Handle digit input ───────────────────────────────────────────────────
   void _onChanged(int index, String value) {
     // Clear error state on new input
     if (_hasError) {
@@ -126,7 +127,7 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
     }
   }
 
-  // â”€â”€â”€ Handle backspace â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Handle backspace ─────────────────────────────────────────────────────
   void _onKeyEvent(int index, KeyEvent event) {
     if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.backspace) {
@@ -138,7 +139,7 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
     }
   }
 
-  // â”€â”€â”€ Verify OTP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Verify OTP ───────────────────────────────────────────────────────────
   Future<void> _handleVerify() async {
     if (!_isComplete || _isVerifying) return;
 
@@ -149,32 +150,14 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
     });
 
     try {
-      // â”€â”€ SUPABASE INTEGRATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-      // import 'package:supabase_flutter/supabase_flutter.dart';
-      //
-      // await Supabase.instance.client.auth.verifyOTP(
-      //   email: widget.email,
-      //   token: _otpValue,
-      //   type: OtpType.recovery,
-      // );
-      //
-      // On success, Supabase returns a session. The user is now authenticated
-      // and can proceed to set a new password.
-      // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-      // â”€â”€ MOCK (remove when Supabase is wired up) â”€â”€
-      await Future.delayed(const Duration(milliseconds: 1400));
-      // To test error state, uncomment the line below:
-      // throw Exception('Invalid OTP');
-      // â”€â”€
-
+      // No backend call here: backend resets password with OTP + new password on Screen 4.
       if (!mounted) return;
 
       // Navigate to Reset Password screen (Screen 4)
       final encodedEmail = Uri.encodeComponent(widget.email);
-      context.push('/forgot-password/reset-password/$encodedEmail');
+      context.push('/forgot-password/reset-password/$encodedEmail?otp=${Uri.encodeComponent(_otpValue)}');
 
-      // â”€â”€ OR direct push â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── OR direct push ────────────────────────────────────────────────────
       // Navigator.push(
       //   context,
       //   MaterialPageRoute(
@@ -189,7 +172,7 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
     }
   }
 
-  // â”€â”€â”€ Error shake animation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Error shake animation ────────────────────────────────────────────────
   void _triggerErrorState(String message) {
     // Clear all boxes
     for (final c in _controllers) {
@@ -206,7 +189,7 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
     });
   }
 
-  // â”€â”€â”€ Resend OTP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Resend OTP ───────────────────────────────────────────────────────────
   Future<void> _handleResend() async {
     if (_secondsRemaining > 0 || _isResending) return;
 
@@ -217,13 +200,14 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
     });
 
     try {
-      // â”€â”€ SUPABASE INTEGRATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── SUPABASE INTEGRATION ─────────────────────────────────────────────
       // await Supabase.instance.client.auth.resetPasswordForEmail(
       //   widget.email,
       // );
-      // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ─────────────────────────────────────────────────────────────────────
 
-      await Future.delayed(const Duration(milliseconds: 900));
+      const authApi = AuthApiService();
+      await authApi.sendPasswordResetOtp(email: widget.email);
 
       if (!mounted) return;
 
@@ -266,7 +250,7 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
     });
   }
 
-  // â”€â”€â”€ Build â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Build ────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -300,7 +284,7 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
     );
   }
 
-  // â”€â”€â”€ App Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── App Bar ──────────────────────────────────────────────────────────────
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: kCream,
@@ -313,7 +297,7 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
     );
   }
 
-  // â”€â”€â”€ Illustration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Illustration ─────────────────────────────────────────────────────────
   Widget _buildIllustration() {
     return Center(
       child: Container(
@@ -380,7 +364,7 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
     );
   }
 
-  // â”€â”€â”€ OTP Input Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── OTP Input Row ────────────────────────────────────────────────────────
   Widget _buildOtpRow() {
     return AnimatedBuilder(
       animation: _shakeAnimation,
@@ -461,7 +445,7 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
     );
   }
 
-  // â”€â”€â”€ Error Message â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Error Message ────────────────────────────────────────────────────────
   Widget _buildErrorMessage() {
     return Padding(
       padding: const EdgeInsets.only(top: 4),
@@ -483,7 +467,7 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
     );
   }
 
-  // â”€â”€â”€ Verify Button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Verify Button ────────────────────────────────────────────────────────
   Widget _buildVerifyButton() {
     return SizedBox(
       height: 54,
@@ -519,7 +503,7 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
     );
   }
 
-  // â”€â”€â”€ Resend Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Resend Row ───────────────────────────────────────────────────────────
   Widget _buildResendRow() {
     final bool canResend = _secondsRemaining == 0 && !_isResending;
 
@@ -560,7 +544,7 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
     );
   }
 
-  // â”€â”€â”€ Login Link â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Login Link ───────────────────────────────────────────────────────────
   Widget _buildLoginLink() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -571,7 +555,7 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
         ),
         GestureDetector(
           onTap: () => context.go('/login'),
-          // â”€â”€ OR if not using named routes: â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          // ── OR if not using named routes: ─────────────────────────────────
           // onTap: () => Navigator.popUntil(context, (route) => route.isFirst),
           child: Text(
             'Log in',
@@ -589,6 +573,9 @@ class _EnterCodeScreenState extends State<EnterCodeScreen>
   }
 }
 
-// â”€â”€â”€ Helper Extension â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Helper Extension ─────────────────────────────────────────────────────────
 // Utility to pop back to the login route by name.
 // If your login route is named differently, update '/login' below.
+
+
+

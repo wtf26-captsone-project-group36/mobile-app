@@ -1,5 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hervest_ai/core/network/auth_api_service.dart';
 
 class CheckEmailScreen extends StatefulWidget {
   final String email;
@@ -66,7 +67,8 @@ class _CheckEmailScreenState extends State<CheckEmailScreen>
     });
 
     try {
-      await Future.delayed(const Duration(milliseconds: 1000));
+      const authApi = AuthApiService();
+      await authApi.sendPasswordResetOtp(email: widget.email);
       if (!mounted) return;
 
       setState(() => _resendSuccess = true);
@@ -313,3 +315,4 @@ class _CheckEmailScreenState extends State<CheckEmailScreen>
     );
   }
 }
+

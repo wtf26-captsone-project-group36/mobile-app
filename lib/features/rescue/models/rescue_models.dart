@@ -41,10 +41,12 @@ class RescueAction {
   final String itemId;
   final String itemName;
   final String itemCategory;
+  final String unit;
   final RescuePath suggestedPath;
   final RescuePath finalPath;
   final RescueEntityCategory suggestedEntityCategory;
   final RescueEntityCategory finalEntityCategory;
+  final String? backendSurplusId;
   final bool wasOverridden;
   final String? note;
   final String? handoverDetails;
@@ -61,10 +63,12 @@ class RescueAction {
     required this.itemId,
     required this.itemName,
     required this.itemCategory,
+    this.unit = 'units',
     required this.suggestedPath,
     required this.finalPath,
     required this.suggestedEntityCategory,
     required this.finalEntityCategory,
+    this.backendSurplusId,
     required this.wasOverridden,
     required this.note,
     required this.handoverDetails,
@@ -82,10 +86,12 @@ class RescueAction {
     String? itemId,
     String? itemName,
     String? itemCategory,
+    String? unit,
     RescuePath? suggestedPath,
     RescuePath? finalPath,
     RescueEntityCategory? suggestedEntityCategory,
     RescueEntityCategory? finalEntityCategory,
+    String? backendSurplusId,
     bool? wasOverridden,
     String? note,
     String? handoverDetails,
@@ -102,11 +108,13 @@ class RescueAction {
       itemId: itemId ?? this.itemId,
       itemName: itemName ?? this.itemName,
       itemCategory: itemCategory ?? this.itemCategory,
+      unit: unit ?? this.unit,
       suggestedPath: suggestedPath ?? this.suggestedPath,
       finalPath: finalPath ?? this.finalPath,
       suggestedEntityCategory:
           suggestedEntityCategory ?? this.suggestedEntityCategory,
       finalEntityCategory: finalEntityCategory ?? this.finalEntityCategory,
+      backendSurplusId: backendSurplusId ?? this.backendSurplusId,
       wasOverridden: wasOverridden ?? this.wasOverridden,
       note: note ?? this.note,
       handoverDetails: handoverDetails ?? this.handoverDetails,
@@ -126,10 +134,12 @@ class RescueAction {
       'itemId': itemId,
       'itemName': itemName,
       'itemCategory': itemCategory,
+      'unit': unit,
       'suggestedPath': suggestedPath.name,
       'finalPath': finalPath.name,
       'suggestedEntityCategory': suggestedEntityCategory.name,
       'finalEntityCategory': finalEntityCategory.name,
+      'backendSurplusId': backendSurplusId,
       'wasOverridden': wasOverridden,
       'note': note,
       'handoverDetails': handoverDetails,
@@ -149,6 +159,7 @@ class RescueAction {
       itemId: (json['itemId'] ?? '').toString(),
       itemName: (json['itemName'] ?? '').toString(),
       itemCategory: (json['itemCategory'] ?? '').toString(),
+      unit: (json['unit'] ?? 'units').toString(),
       suggestedPath: RescuePath.values.firstWhere(
         (value) => value.name == json['suggestedPath'],
         orElse: () => RescuePath.donation,
@@ -165,6 +176,7 @@ class RescueAction {
         (value) => value.name == json['finalEntityCategory'],
         orElse: () => RescueEntityCategory.foodKitchen,
       ),
+      backendSurplusId: json['backendSurplusId']?.toString(),
       wasOverridden: json['wasOverridden'] == true,
       note: json['note']?.toString(),
       handoverDetails: json['handoverDetails']?.toString(),

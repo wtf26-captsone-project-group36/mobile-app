@@ -66,8 +66,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       _buildTabSwitcher(),
                       const SizedBox(height: 24),
                       selectedTab == 0
-                          ? _buildOverviewGrid(isWideScreen, invProvider)
-                          : _buildRecentActivity(invProvider),
+                          ? _buildOverviewGrid(isWideScreen, invProvider, appState)
+                          : _buildRecentActivity(invProvider, appState),
                     ]),
                   ),
                 ),
@@ -195,7 +195,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildOverviewGrid(bool isWide, InventoryProvider inv) {
+  Widget _buildOverviewGrid(
+    bool isWide,
+    InventoryProvider inv,
+    AppStateController appState,
+  ) {
+    final netBalance = (appState.cashflowReport['net_balance'] as num?)?.toDouble();
+    final prediction = appState.latestPredictions['cashflow_prediction'];
+    final riskLevel = prediction is Map<String, dynamic>
+        ? (prediction['risk_level'] ?? '').toString().trim()
+        : '';
+    final cashflowValue = netBalance == null
+        ? "NGN ${(inv.totalLedgerValue / 1000).toStringAsFixed(0)}k"
+        : "NGN ${_formatCompactNgn(netBalance)}";
+    final alertsCount = appState.criticalAlerts > 0
+        ? appState.criticalAlerts
+        : inv.criticalCount;
+
     return Column(
       children: [
         GridView.count(
@@ -216,14 +232,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             _statCard(
               "Cashflow",
-              "NGN ${(inv.totalLedgerValue / 1000).toStringAsFixed(0)}k",
+              riskLevel.isEmpty ? cashflowValue : "$cashflowValue • $riskLevel",
               Icons.account_balance_wallet_outlined,
               Colors.orange,
               '/cashflow',
             ),
             _statCard(
               "AI Alerts",
-              "${inv.criticalCount} Critical",
+              "$alertsCount Critical",
               Icons.auto_awesome_outlined,
               Colors.red,
               '/suggestions',
@@ -241,6 +257,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _buildRescueAssistantEntry(),
       ],
     );
+  }
+
+  String _formatCompactNgn(double value) {
+    final abs = value.abs();
+    if (abs >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(1)}M';
+    }
+    if (abs >= 1000) {
+      return '${(value / 1000).toStringAsFixed(0)}k';
+    }
+    return value.toStringAsFixed(0);
   }
 
   Widget _buildRescueAssistantEntry() {
@@ -279,7 +306,84 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildRecentActivity(InventoryProvider inv) {
+  Widget _buildRecentActivity(InventoryProvider inv, AppStateController appState) {
+    if (appState.alerts.isNotEmpty || appState.activities.isNotEmpty) {
+      final tiles = <Widget>[];
+      for (final alert in appState.alerts.take(5)) {
+        final id = (alert['id'] ?? '').toString();
+        final title = (alert['alert_type'] ?? 'Alert').toString();
+        final message = (alert['message'] ?? '').toString();
+        final isRead = alert['is_read'] == true;
+
+        tiles.add(
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: CircleAvatar(
+              backgroundColor: isRead
+                  ? Colors.blue.withValues(alpha: 0.12)
+                  : Colors.red.withValues(alpha: 0.12),
+              child: Icon(
+                isRead ? Icons.notifications_none : Icons.priority_high,
+                size: 18,
+                color: isRead ? Colors.blue : Colors.red,
+              ),
+            ),
+            title: Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(message),
+            trailing: PopupMenuButton<String>(
+              onSelected: (value) async {
+                if (id.isEmpty) return;
+                if (value == 'read') {
+                  await appState.markAlertRead(id);
+                } else if (value == 'resolve') {
+                  await appState.resolveAlert(id);
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(value: 'read', child: Text('Mark as Read')),
+                PopupMenuItem(value: 'resolve', child: Text('Resolve Alert')),
+              ],
+            ),
+          ),
+        );
+      }
+
+      for (final activity in appState.activities.take(5)) {
+        final action = (activity['action'] ?? 'Activity').toString();
+        final entity = (activity['entity_type'] ?? '').toString();
+        final createdAt = (activity['created_at'] ?? '').toString();
+        final created = DateTime.tryParse(createdAt);
+
+        tiles.add(
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: CircleAvatar(
+              backgroundColor: Colors.orange.withValues(alpha: 0.12),
+              child: const Icon(Icons.history, size: 18, color: Colors.orange),
+            ),
+            title: Text(
+              action,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(
+              created == null
+                  ? entity
+                  : '$entity • ${created.toLocal().toString().split('.').first}',
+            ),
+          ),
+        );
+      }
+
+      return ListView(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        children: tiles,
+      );
+    }
+
     // Only show items that are warning or expired
     final items = inv.items
         .where((i) => i.status != ItemStatus.normal)

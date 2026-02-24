@@ -147,7 +147,7 @@ class OnboardingFirstScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 35),               //was 18 then 24
+              const SizedBox(height: 35),               //was 18 then 24  
             ],
           ),
         ),

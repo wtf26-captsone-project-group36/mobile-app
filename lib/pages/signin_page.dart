@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
+import 'package:hervest_ai/core/network/auth_api_service.dart';
 import 'package:hervest_ai/provider/app_state_controller_mock.dart';
 import 'package:hervest_ai/provider/profile_controller.dart';
+import 'package:hervest_ai/provider/inventory_provider.dart';
+import 'package:hervest_ai/provider/rescue_provider.dart';
 import 'package:hervest_ai/core/utils/user_name_utils.dart';
 import 'package:hervest_ai/widgets/auth_form_field.dart';
 
@@ -27,6 +30,8 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   final _emailFocus = FocusNode();
   final _passwordFocus = FocusNode();
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -126,58 +131,46 @@ class _LoginPageState extends State<LoginPage> {
                 textInputAction: TextInputAction.done,
               ),
               const SizedBox(height: 24), // Reduced from 32
+              if (_errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: kError, fontSize: 13),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               // Login Button
               SizedBox(
                 width: double.infinity,
                 height: 50, // Slightly shorter button
                 child: ElevatedButton(
-                  onPressed: () async {
-                    final profile = context.read<ProfileController>();
-                    await profile.load();
-
-                    // Clear guest mode and mark as logged in
-                    await AppSessionStore.instance.setGuestMode(false);
-                    await AppSessionStore.instance.setLoggedIn(true);
-
-                    // Update stored email for profile
-                    final email = _emailController.text.trim();
-                    final inferredName = displayNameFromEmail(email);
-                    await profile.updateProfile(
-                      fullName: profile.fullName.isNotEmpty
-                          ? profile.fullName
-                          : inferredName,
-                      email: email,
-                      phone: profile.phone,
-                      businessName: profile.businessName,
-                      role: profile.role.isNotEmpty ? profile.role : 'Owner',
-                      businessType: profile.businessType,
-                      location: profile.location,
-                    );
-
-                    if (context.mounted) {
-                      final appState = Provider.of<AppStateController>(
-                        context,
-                        listen: false,
-                      );
-                      appState.setUserName(displayNameFromEmail(email));
-
-                      context.go('/dashboard');
-                    }
-                  },
+                  onPressed: _isLoading ? null : () async => _handleLogin(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryGreen,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'Login',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.0,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : const Text(
+                          'Login',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
 
@@ -243,6 +236,73 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleLogin(BuildContext context) async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final profile = context.read<ProfileController>();
+    final appState = context.read<AppStateController>();
+    final inventoryProvider = context.read<InventoryProvider>();
+    final rescueProvider = context.read<RescueProvider>();
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _errorMessage = 'Email and password are required.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      const authApi = AuthApiService();
+      final session = await authApi.signIn(email: email, password: password);
+
+      await AppSessionStore.instance.setAuthTokens(
+        accessToken: session.accessToken,
+        refreshToken: session.refreshToken,
+      );
+      await AppSessionStore.instance.setGuestMode(false);
+      await AppSessionStore.instance.setLoggedIn(true);
+
+      final user = session.user;
+      final business = (user['business'] as Map?)?.cast<String, dynamic>() ?? {};
+      final fullName =
+          (user['full_name'] ?? '').toString().trim().isNotEmpty
+              ? (user['full_name'] ?? '').toString().trim()
+              : displayNameFromEmail(email);
+
+      if (!context.mounted) return;
+      await profile.updateProfile(
+        fullName: fullName,
+        email: (user['email'] ?? email).toString(),
+        phone: '',
+        businessName: (business['business_name'] ?? '').toString(),
+        role: (user['role'] ?? 'owner').toString(),
+        businessType: (business['business_type'] ?? '').toString(),
+        location: '',
+      );
+
+      if (!context.mounted) return;
+      appState.setUserName(fullName);
+      await appState.loadTransactionsFromBackend();
+      await appState.loadInsightsFromBackend();
+      await inventoryProvider.loadFromBackend();
+      await rescueProvider.loadMarketplaceSurplus();
+
+      if (context.mounted) context.go('/dashboard');
+    } on AuthApiException catch (e) {
+      if (mounted) setState(() => _errorMessage = e.message);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _errorMessage = 'Login failed. Please try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 }
 

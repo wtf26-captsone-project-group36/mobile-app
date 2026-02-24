@@ -19,7 +19,9 @@ class _InventoryPageOneState extends State<InventoryPageOne> {
   final Color warningOrange = Colors.orange.shade700;
 
   Future<void> _handleAddItemFlow(BuildContext context) async {
+    final router = GoRouter.of(context);
     final isGuest = await AppSessionStore.instance.isGuest();
+    if (!context.mounted) return;
     
     if (isGuest) {
       if (mounted) {
@@ -30,14 +32,100 @@ class _InventoryPageOneState extends State<InventoryPageOne> {
             action: SnackBarAction(
               label: 'Sign Up',
               textColor: Colors.white,
-              onPressed: () => context.push('/signup'),
+              onPressed: () => router.push('/signup'),
             ),
           ),
         );
       }
       return;
     }
-    context.push('/inventory/add'); 
+    router.push('/inventory/add'); 
+  }
+
+  Future<void> _showEditDialog(
+    BuildContext context,
+    InventoryProvider provider,
+    InventoryItem item,
+  ) async {
+    final nameController = TextEditingController(text: item.name);
+    final qtyController = TextEditingController(text: item.quantity.toString());
+    final unitController = TextEditingController(text: item.unit);
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Edit Item'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Name'),
+              ),
+              TextField(
+                controller: qtyController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(labelText: 'Quantity'),
+              ),
+              TextField(
+                controller: unitController,
+                decoration: const InputDecoration(labelText: 'Unit'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+    if (saved != true || !context.mounted) return;
+
+    final qty = double.tryParse(qtyController.text.trim()) ?? item.quantity;
+    await provider.updateItemFromApi(
+      itemId: item.id,
+      name: nameController.text.trim().isEmpty ? item.name : nameController.text.trim(),
+      quantity: qty,
+      unit: unitController.text.trim().isEmpty ? item.unit : unitController.text.trim(),
+    );
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    InventoryProvider provider,
+    InventoryItem item,
+  ) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Delete Item'),
+          content: Text('Delete "${item.name}" from inventory?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: errorRed),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete != true || !context.mounted) return;
+    await provider.deleteItemFromApi(item.id);
   }
 
   @override
@@ -137,21 +225,45 @@ class _InventoryPageOneState extends State<InventoryPageOne> {
                     item.category, 
                     style: const TextStyle(fontSize: 12, color: Colors.black54)
                   ),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        "${item.quantity} ${item.unit}", 
-                        style: TextStyle(
-                          color: statusColor, 
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14
-                        )
-                      ),
-                      if (statusIcon != null)
-                        Icon(statusIcon, size: 16, color: errorRed),
-                    ],
+                  trailing: SizedBox(
+                    width: 140,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                "${item.quantity} ${item.unit}",
+                                style: TextStyle(
+                                  color: statusColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (statusIcon != null)
+                                Icon(statusIcon, size: 16, color: errorRed),
+                            ],
+                          ),
+                        ),
+                        PopupMenuButton<String>(
+                          onSelected: (value) async {
+                            if (value == 'edit') {
+                              await _showEditDialog(context, provider, item);
+                            } else if (value == 'delete') {
+                              await _confirmDelete(context, provider, item);
+                            }
+                          },
+                          itemBuilder: (context) => const [
+                            PopupMenuItem(value: 'edit', child: Text('Edit')),
+                            PopupMenuItem(value: 'delete', child: Text('Delete')),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                   onTap: () {
                     // Navigate to Page 3 if item has errors

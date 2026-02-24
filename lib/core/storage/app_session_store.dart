@@ -9,6 +9,8 @@ class AppSessionStore {
   static const String _isLoggedInKey = 'is_logged_in';
   static const String _isGuestKey = 'is_guest';
   static const String _userNameKey = 'user_name';
+  static const String _accessTokenKey = 'auth_access_token';
+  static const String _refreshTokenKey = 'auth_refresh_token';
 
   Future<bool> hasSeenOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
@@ -53,5 +55,30 @@ class AppSessionStore {
   Future<void> clearUserName() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_userNameKey);
+  }
+
+  Future<void> setAuthTokens({
+    required String accessToken,
+    required String refreshToken,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_accessTokenKey, accessToken);
+    await prefs.setString(_refreshTokenKey, refreshToken);
+  }
+
+  Future<String?> getAccessToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_accessTokenKey);
+  }
+
+  Future<String?> getRefreshToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_refreshTokenKey);
+  }
+
+  Future<void> clearAuthTokens() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_accessTokenKey);
+    await prefs.remove(_refreshTokenKey);
   }
 }

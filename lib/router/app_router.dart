@@ -20,6 +20,9 @@ import 'package:hervest_ai/pages/reset_password.dart';
 import 'package:hervest_ai/pages/facebook_auth_mock_page.dart';
 import 'package:hervest_ai/pages/whatsapp_auth_mock_page.dart';
 import 'package:hervest_ai/pages/account_settings_page.dart';
+import 'package:hervest_ai/pages/audit_logs_page.dart';
+import 'package:hervest_ai/pages/budgets_page.dart';
+import 'package:hervest_ai/pages/expenses_page.dart';
 
 // Shell + tab roots
 import 'package:hervest_ai/bottom_navigation/bottom_navigation.dart';
@@ -149,6 +152,7 @@ final GoRouter appRouter = GoRouter(
       path: '/forgot-password/reset-password/:email',
       builder: (context, state) => ResetPasswordScreen(
         email: Uri.decodeComponent(state.pathParameters['email']!),
+        otp: state.uri.queryParameters['otp'] ?? '',
       ),
     ),
     GoRoute(
@@ -220,6 +224,16 @@ final GoRouter appRouter = GoRouter(
                   parentNavigatorKey: _rootNavigatorKey,
                   builder: (context, state) => const TransactionHistoryPage(),
                 ),
+                GoRoute(
+                  path: 'budgets',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (context, state) => const BudgetsPage(),
+                ),
+                GoRoute(
+                  path: 'expenses',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (context, state) => const ExpensesPage(),
+                ),
               ],
             ),
           ],
@@ -246,6 +260,13 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: '/profile',
               builder: (context, state) => const ProfilePage(),
+              routes: [
+                GoRoute(
+                  path: 'audit-logs',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (context, state) => const AuditLogsPage(),
+                ),
+              ],
             ),
           ],
         ),

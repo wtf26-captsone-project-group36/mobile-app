@@ -18,6 +18,15 @@ class _RescuePledgesHistoryPageState extends State<RescuePledgesHistoryPage> {
   _PledgeFilter _filter = _PledgeFilter.all;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<RescueProvider>().loadMarketplaceSurplus();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final rescue = context.watch<RescueProvider>();
     final actions = rescue.actions.where((action) {
@@ -59,13 +68,18 @@ class _RescuePledgesHistoryPageState extends State<RescuePledgesHistoryPage> {
                     itemCount: actions.length,
                     itemBuilder: (_, index) {
                       final action = actions[index];
+                      final backend = _backendStatus(rescue, action);
                       return Card(
                         child: ListTile(
                           title: Text(action.itemName),
                           subtitle: Text(
-                            '${action.itemCategory} • ${DateFormat('yyyy-MM-dd HH:mm').format(action.pledgedAt.toLocal())}',
+                            '${action.itemCategory} • ${action.finalPath.name}\n'
+                            '${DateFormat('yyyy-MM-dd HH:mm').format(action.pledgedAt.toLocal())}\n'
+                            'Backend: ${backend.$1}${backend.$2.isEmpty ? '' : ' (${backend.$2})'}'
+                            '${backend.$3.isEmpty ? '' : '\nSurplus ID: ${backend.$3}'}',
                           ),
-                          trailing: _statusChip(action),
+                          isThreeLine: true,
+                          trailing: _buildTrailing(rescue, action, backend),
                         ),
                       );
                     },
@@ -105,5 +119,72 @@ class _RescuePledgesHistoryPageState extends State<RescuePledgesHistoryPage> {
       label: const Text('Pending'),
       backgroundColor: Colors.blue.withValues(alpha: 0.12),
     );
+  }
+
+  Widget _buildTrailing(
+    RescueProvider rescue,
+    RescueAction action,
+    (String, String, String) backend,
+  ) {
+    final canClaim = _canMarkClaimed(action, backend);
+    if (!canClaim) return _statusChip(action);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _statusChip(action),
+        const SizedBox(height: 6),
+        SizedBox(
+          height: 28,
+          child: OutlinedButton(
+            onPressed: () async {
+              final ok = await rescue.markActionSurplusClaimed(action);
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(ok ? 'Marked as claimed' : 'Failed to mark as claimed'),
+                ),
+              );
+            },
+            child: const Text('Mark Claimed'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  bool _canMarkClaimed(RescueAction action, (String, String, String) backend) {
+    if (action.finalPath != RescuePath.surplusSale) return false;
+    if (action.isCompleted) return false;
+    final status = backend.$2.toLowerCase().trim();
+    if (status == 'claimed' || status == 'completed') return false;
+    return true;
+  }
+
+  (String, String, String) _backendStatus(
+    RescueProvider rescue,
+    RescueAction action,
+  ) {
+    if (action.finalPath != RescuePath.surplusSale) {
+      return ('Not required', '', '');
+    }
+
+    final id = (action.backendSurplusId ?? '').trim();
+    if (id.isEmpty) {
+      return ('Not synced', '', '');
+    }
+
+    for (final row in rescue.mySurplus) {
+      final rowId = (row['id'] ?? '').toString();
+      if (rowId == id) {
+        final status = (row['status'] ?? 'unknown').toString();
+        return ('Synced', status, id);
+      }
+    }
+
+    if (action.isCompleted) {
+      return ('Synced', 'completed', id);
+    }
+    return ('Synced', 'not-visible', id);
   }
 }

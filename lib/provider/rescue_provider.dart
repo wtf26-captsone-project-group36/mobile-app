@@ -1,6 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:hervest_ai/core/network/activity_api_service.dart';
+import 'package:hervest_ai/core/network/surplus_api_service.dart';
+import 'package:hervest_ai/core/storage/app_session_store.dart';
 import 'package:hervest_ai/features/rescue/data/rescue_local_db.dart';
 import 'package:hervest_ai/features/rescue/models/rescue_models.dart';
 import 'package:hervest_ai/features/rescue/services/rescue_suggestion_service.dart';
@@ -45,9 +48,15 @@ class RescueProvider extends ChangeNotifier {
   bool _isReady = false;
   bool _usePrefsFallback = false;
   bool _assistantOpenRequested = false;
+  final SurplusApiService _surplusApi = const SurplusApiService();
+  final ActivityApiService _activityApi = const ActivityApiService();
+  List<Map<String, dynamic>> _marketplaceSurplus = const [];
+  List<Map<String, dynamic>> _mySurplus = const [];
 
   List<RescueSuggestion> get suggestions => _suggestions;
   List<RescueAction> get actions => _actions;
+  List<Map<String, dynamic>> get marketplaceSurplus => _marketplaceSurplus;
+  List<Map<String, dynamic>> get mySurplus => _mySurplus;
   Set<String> get earnedBadgeCodes => _earnedBadgeCodes;
   RescueBadge? get latestBadgeAward => _latestBadgeAward;
   bool get isReady => _isReady;
@@ -106,6 +115,7 @@ class RescueProvider extends ChangeNotifier {
       }
     }
     _isReady = true;
+    await loadMarketplaceSurplus();
     notifyListeners();
   }
 
@@ -148,10 +158,12 @@ class RescueProvider extends ChangeNotifier {
       itemId: suggestion.itemId,
       itemName: suggestion.itemName,
       itemCategory: suggestion.itemCategory,
+      unit: suggestion.unit,
       suggestedPath: suggestion.recommendedPath,
       finalPath: finalPath,
       suggestedEntityCategory: suggestion.bestEntityCategory,
       finalEntityCategory: finalEntity,
+      backendSurplusId: latest?.backendSurplusId,
       wasOverridden: overridden,
       note: note?.trim().isEmpty == true ? null : note?.trim(),
       handoverDetails: handoverDetails?.trim().isEmpty == true
@@ -175,6 +187,7 @@ class RescueProvider extends ChangeNotifier {
     }
     _awardCommitmentBadgeIfNeeded();
     await _persist();
+    await _syncPledgeToBackend(action);
     notifyListeners();
   }
 
@@ -201,6 +214,7 @@ class RescueProvider extends ChangeNotifier {
         .toList();
     _awardBadgesIfNeeded();
     await _persist();
+    await _syncCompletionToBackend(completed);
     notifyListeners();
   }
 
@@ -216,7 +230,213 @@ class RescueProvider extends ChangeNotifier {
         .map((entry) => entry.id == latest.id ? deferred : entry)
         .toList();
     await _persist();
+    await _logActivityToBackend(
+      action: 'rescue.deferred',
+      entityId: deferred.itemId,
+      details: {'item_name': deferred.itemName, 'reason': deferred.note ?? ''},
+    );
     notifyListeners();
+  }
+
+  Future<void> loadMarketplaceSurplus() async {
+    final token = await AppSessionStore.instance.getAccessToken();
+    if (token == null || token.isEmpty) return;
+
+    try {
+      _marketplaceSurplus = await _surplusApi.getAvailableSurplus(
+        accessToken: token,
+      );
+      _mySurplus = await _surplusApi.getMySurplus(accessToken: token);
+      notifyListeners();
+    } catch (_) {
+      // Keep local fallback list.
+    }
+  }
+
+  Future<void> _syncPledgeToBackend(RescueAction action) async {
+    await _logActivityToBackend(
+      action: 'rescue.pledged',
+      entityId: action.itemId,
+      details: {
+        'item_name': action.itemName,
+        'path': action.finalPath.name,
+        'entity': action.finalEntityCategory.name,
+      },
+    );
+
+    if (action.finalPath != RescuePath.surplusSale) return;
+
+    final token = await AppSessionStore.instance.getAccessToken();
+    if (token == null || token.isEmpty) return;
+
+    try {
+      final created = await _surplusApi.createSurplus(
+        accessToken: token,
+        body: {
+          'inventory_id': action.itemId,
+          'name': action.itemName,
+          'quantity': action.quantity,
+          'unit': action.unit,
+          'description': action.note ?? '',
+          'is_free': false,
+          'price': action.estimatedValue,
+          'pickup_deadline': DateTime.now()
+              .add(const Duration(days: 2))
+              .toIso8601String(),
+        },
+      );
+      final createdId = (created['id'] ?? '').toString();
+      if (createdId.isNotEmpty) {
+        _actions = _actions
+            .map(
+              (entry) => entry.id == action.id
+                  ? entry.copyWith(backendSurplusId: createdId)
+                  : entry,
+            )
+            .toList();
+        await _persist();
+      }
+      await loadMarketplaceSurplus();
+    } catch (_) {
+      // Do not fail local pledge flow if backend sync fails.
+    }
+  }
+
+  Future<void> _syncCompletionToBackend(RescueAction action) async {
+    await _logActivityToBackend(
+      action: 'rescue.completed',
+      entityId: action.itemId,
+      details: {
+        'item_name': action.itemName,
+        'path': action.finalPath.name,
+      },
+    );
+
+    if (action.finalPath != RescuePath.surplusSale) return;
+
+    final token = await AppSessionStore.instance.getAccessToken();
+    if (token == null || token.isEmpty) return;
+
+    try {
+      var id = (action.backendSurplusId ?? '').toString();
+      if (id.isEmpty) {
+        final mySurplus = await _surplusApi.getMySurplus(accessToken: token);
+        Map<String, dynamic>? match;
+        for (final row in mySurplus) {
+          final name = (row['name'] ?? '').toString().toLowerCase();
+          final status = (row['status'] ?? '').toString().toLowerCase();
+          if (name == action.itemName.toLowerCase() && status == 'available') {
+            match = row;
+            break;
+          }
+        }
+        id = (match?['id'] ?? '').toString();
+      }
+      if (id.isEmpty) return;
+      await _surplusApi.updateSurplusStatus(
+        accessToken: token,
+        id: id,
+        status: 'completed',
+      );
+      await loadMarketplaceSurplus();
+    } catch (_) {
+      // Do not fail local completion flow if backend sync fails.
+    }
+  }
+
+  Future<void> _logActivityToBackend({
+    required String action,
+    String? entityId,
+    Map<String, dynamic>? details,
+  }) async {
+    final token = await AppSessionStore.instance.getAccessToken();
+    if (token == null || token.isEmpty) return;
+    try {
+      await _activityApi.insertActivity(
+        accessToken: token,
+        action: action,
+        entityType: 'rescue',
+        entityId: entityId,
+        details: details,
+      );
+    } catch (_) {
+      // Non-blocking by design.
+    }
+  }
+
+  String? surplusStatusForAction(RescueAction action) {
+    final id = (action.backendSurplusId ?? '').trim();
+    if (id.isEmpty) return null;
+    for (final row in _mySurplus) {
+      final rowId = (row['id'] ?? '').toString();
+      if (rowId == id) {
+        return (row['status'] ?? '').toString();
+      }
+    }
+    return null;
+  }
+
+  Future<bool> markActionSurplusClaimed(RescueAction action) async {
+    if (action.finalPath != RescuePath.surplusSale) return false;
+    final token = await AppSessionStore.instance.getAccessToken();
+    if (token == null || token.isEmpty) return false;
+
+    var id = (action.backendSurplusId ?? '').trim();
+    if (id.isEmpty) {
+      for (final row in _mySurplus) {
+        final name = (row['name'] ?? '').toString().toLowerCase();
+        final status = (row['status'] ?? '').toString().toLowerCase();
+        if (name == action.itemName.toLowerCase() && status == 'available') {
+          id = (row['id'] ?? '').toString();
+          break;
+        }
+      }
+    }
+    if (id.isEmpty) return false;
+
+    var claimed = false;
+    try {
+      await _surplusApi.claimSurplus(accessToken: token, id: id);
+      claimed = true;
+    } catch (_) {
+      // Some backends reject self-claim; fall back to owner status update.
+    }
+
+    if (!claimed) {
+      try {
+        await _surplusApi.updateSurplusStatus(
+          accessToken: token,
+          id: id,
+          status: 'claimed',
+        );
+        claimed = true;
+      } catch (_) {
+        // Ignore and leave local state unchanged.
+      }
+    }
+
+    if (!claimed) return false;
+
+    if ((action.backendSurplusId ?? '').isEmpty) {
+      _actions = _actions
+          .map(
+            (entry) => entry.id == action.id
+                ? entry.copyWith(backendSurplusId: id)
+                : entry,
+          )
+          .toList();
+      await _persist();
+    }
+
+    await _logActivityToBackend(
+      action: 'surplus.claimed',
+      entityId: id,
+      details: {'item_name': action.itemName},
+    );
+
+    await loadMarketplaceSurplus();
+    notifyListeners();
+    return true;
   }
 
   void clearLatestBadgeAward() {

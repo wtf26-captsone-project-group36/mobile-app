@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:hervest_ai/models/inventory_model.dart';
 import 'package:hervest_ai/mock_data/inventory_mock.dart'; 
+import 'package:hervest_ai/core/storage/app_session_store.dart';
+import 'package:hervest_ai/core/network/inventory_api_service.dart';
 
 class InventoryProvider extends ChangeNotifier {
   final List<InventoryItem> _items = [];
   final int criticalThresholdDays = 3;
+  final InventoryApiService _api = const InventoryApiService();
 
   List<InventoryItem> get items => _items;
 
   InventoryProvider() {
     _loadInitialData();
+    loadFromBackend();
   }
 
   void _loadInitialData() {
@@ -35,6 +39,119 @@ class InventoryProvider extends ChangeNotifier {
     if (!isInitialLoad) notifyListeners();
   }
 
+  Future<void> updateItemFromApi({
+    required String itemId,
+    String? name,
+    String? category,
+    double? quantity,
+    String? unit,
+    DateTime? expiryDate,
+    double? purchasePrice,
+  }) async {
+    final index = _items.indexWhere((e) => e.id == itemId);
+    if (index < 0) return;
+
+    final current = _items[index];
+    final updated = InventoryItem(
+      id: current.id,
+      name: name ?? current.name,
+      category: category ?? current.category,
+      quantity: quantity ?? current.quantity,
+      unit: unit ?? current.unit,
+      expiryDate: expiryDate ?? current.expiryDate,
+      purchasePrice: purchasePrice ?? current.purchasePrice,
+      dateReceived: current.dateReceived,
+    );
+    _validateItem(updated);
+    _items[index] = updated;
+    notifyListeners();
+
+    final token = await AppSessionStore.instance.getAccessToken();
+    if (token == null || token.isEmpty) return;
+
+    try {
+      final apiUpdated = await _api.updateInventoryItem(
+        accessToken: token,
+        itemId: itemId,
+        body: {
+          if (name != null) 'name': name,
+          if (category != null) 'category': category,
+          if (quantity != null) 'quantity': quantity,
+          if (unit != null) 'unit': unit,
+          if (expiryDate != null)
+            'expiry_date': expiryDate.toIso8601String().split('T').first,
+          if (purchasePrice != null) 'purchase_price': purchasePrice,
+        },
+      );
+      if (apiUpdated.isNotEmpty) {
+        _items[index] = _fromApi(apiUpdated);
+        notifyListeners();
+      }
+    } catch (_) {
+      // Keep optimistic update on API error.
+    }
+  }
+
+  Future<void> deleteItemFromApi(String itemId) async {
+    final index = _items.indexWhere((e) => e.id == itemId);
+    if (index < 0) return;
+    final removed = _items.removeAt(index);
+    notifyListeners();
+
+    final token = await AppSessionStore.instance.getAccessToken();
+    if (token == null || token.isEmpty) return;
+
+    try {
+      await _api.deleteInventoryItem(accessToken: token, itemId: itemId);
+    } catch (_) {
+      _items.insert(index, removed);
+      notifyListeners();
+    }
+  }
+
+  Future<void> addItemFromApi(InventoryItem item) async {
+    final token = await AppSessionStore.instance.getAccessToken();
+    if (token == null || token.isEmpty) {
+      addItem(item);
+      return;
+    }
+
+    try {
+      final created = await _api.createInventoryItem(
+        accessToken: token,
+        body: {
+          'name': item.name,
+          'quantity': item.quantity,
+          'unit': item.unit,
+          'category': item.category,
+          'purchase_price': item.purchasePrice ?? 0,
+          'expiry_date': item.expiryDate?.toIso8601String().split('T').first,
+        },
+      );
+      final mapped = _fromApi(created);
+      addItem(mapped);
+    } catch (_) {
+      addItem(item);
+    }
+  }
+
+  Future<void> loadFromBackend() async {
+    final token = await AppSessionStore.instance.getAccessToken();
+    if (token == null || token.isEmpty) return;
+
+    try {
+      final rows = await _api.getInventory(accessToken: token);
+      if (rows.isEmpty) return;
+
+      _items
+        ..clear()
+        ..addAll(rows.map(_fromApi));
+      notifyListeners();
+    } catch (_) {
+      // Keep local fallback data if API load fails.
+    }
+  }
+
   void _validateItem(InventoryItem item) {
     if (item.expiryDate == null) {
       item.status = ItemStatus.error;
@@ -58,6 +175,28 @@ class InventoryProvider extends ChangeNotifier {
   List<InventoryItem> get donationSuggestions => _items.where((i) => i.status == ItemStatus.warning).toList();
 
   double get totalLedgerValue => _items.fold(0, (sum, item) => sum + (item.purchasePrice ?? 0));
+
+  InventoryItem _fromApi(Map<String, dynamic> json) {
+    final id = (json['item_id'] ?? json['id'] ?? DateTime.now().millisecondsSinceEpoch.toString()).toString();
+    final name = (json['item_name'] ?? json['name'] ?? 'Unknown').toString();
+    final category = (json['category'] ?? 'General').toString();
+    final quantity = (json['quantity'] as num?)?.toDouble() ?? 0.0;
+    final unit = (json['unit'] ?? 'units').toString();
+    final purchasePrice = (json['purchase_price'] as num?)?.toDouble() ??
+        (json['unit_price'] as num?)?.toDouble() ??
+        0.0;
+    final expiryRaw = json['expiry_date']?.toString();
+
+    return InventoryItem(
+      id: id,
+      name: name,
+      category: category,
+      quantity: quantity,
+      unit: unit,
+      expiryDate: expiryRaw == null || expiryRaw.isEmpty ? null : DateTime.tryParse(expiryRaw),
+      purchasePrice: purchasePrice,
+    );
+  }
 }
 
 

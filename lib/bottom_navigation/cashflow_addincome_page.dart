@@ -220,7 +220,7 @@ class _AddIncomePageState extends State<AddIncomePage> {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        onPressed: () {
+        onPressed: () async {
           final amount = _parseAmount(_amountController.text);
           if (amount <= 0) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -234,12 +234,14 @@ class _AddIncomePageState extends State<AddIncomePage> {
           final date = _dateController.text.trim().isNotEmpty
               ? _dateController.text.trim()
               : "Today";
-          context.read<AppStateController>().addTransaction(
+          await context.read<AppStateController>().addTransaction(
             title: title,
             amount: "NGN ${_formatAmount(amount)}",
             type: "Income",
             date: date,
+            note: _descriptionController.text.trim(),
           );
+          if (!context.mounted) return;
           context.pop();
         },
         child: const Text(

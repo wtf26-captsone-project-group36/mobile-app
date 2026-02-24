@@ -8,7 +8,7 @@ class RescueLocalDb {
   static final RescueLocalDb instance = RescueLocalDb._();
 
   static const String _dbName = 'hervest_rescue.db';
-  static const int _dbVersion = 2;
+  static const int _dbVersion = 3;
 
   static const String rescueActionsTable = 'rescue_actions';
   static const String badgeEarningsTable = 'badge_earnings';
@@ -35,10 +35,12 @@ class RescueLocalDb {
             item_id TEXT NOT NULL,
             item_name TEXT NOT NULL,
             item_category TEXT NOT NULL,
+            unit TEXT NOT NULL DEFAULT 'units',
             suggested_path TEXT NOT NULL,
             final_path TEXT NOT NULL,
             suggested_entity_category TEXT NOT NULL,
             final_entity_category TEXT NOT NULL,
+            backend_surplus_id TEXT,
             was_overridden INTEGER NOT NULL,
             note TEXT,
             handover_details TEXT,
@@ -75,6 +77,16 @@ class RescueLocalDb {
           await db.execute('''
             ALTER TABLE $rescueActionsTable
             ADD COLUMN is_deferred INTEGER NOT NULL DEFAULT 0;
+          ''');
+        }
+        if (oldVersion < 3) {
+          await db.execute('''
+            ALTER TABLE $rescueActionsTable
+            ADD COLUMN unit TEXT NOT NULL DEFAULT 'units';
+          ''');
+          await db.execute('''
+            ALTER TABLE $rescueActionsTable
+            ADD COLUMN backend_surplus_id TEXT;
           ''');
         }
       },
@@ -132,10 +144,12 @@ class RescueLocalDb {
       'item_id': action.itemId,
       'item_name': action.itemName,
       'item_category': action.itemCategory,
+      'unit': action.unit,
       'suggested_path': action.suggestedPath.name,
       'final_path': action.finalPath.name,
       'suggested_entity_category': action.suggestedEntityCategory.name,
       'final_entity_category': action.finalEntityCategory.name,
+      'backend_surplus_id': action.backendSurplusId,
       'was_overridden': action.wasOverridden ? 1 : 0,
       'note': action.note,
       'handover_details': action.handoverDetails,
@@ -155,6 +169,7 @@ class RescueLocalDb {
       itemId: (row['item_id'] ?? '').toString(),
       itemName: (row['item_name'] ?? '').toString(),
       itemCategory: (row['item_category'] ?? '').toString(),
+      unit: (row['unit'] ?? 'units').toString(),
       suggestedPath: RescuePath.values.firstWhere(
         (value) => value.name == (row['suggested_path'] ?? '').toString(),
         orElse: () => RescuePath.donation,
@@ -173,6 +188,7 @@ class RescueLocalDb {
             value.name == (row['final_entity_category'] ?? '').toString(),
         orElse: () => RescueEntityCategory.foodKitchen,
       ),
+      backendSurplusId: row['backend_surplus_id']?.toString(),
       wasOverridden: (row['was_overridden'] as int? ?? 0) == 1,
       note: row['note']?.toString(),
       handoverDetails: row['handover_details']?.toString(),

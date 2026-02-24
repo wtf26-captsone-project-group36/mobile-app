@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:hervest_ai/core/network/auth_api_service.dart';
 import 'package:hervest_ai/provider/app_state_controller_mock.dart'; // Handles Search, Profile, & Finance
+import 'package:hervest_ai/core/network/api_health_service.dart';
+import 'package:hervest_ai/core/network/api_config.dart';
+import 'package:hervest_ai/core/storage/app_session_store.dart';
 
 import 'package:provider/provider.dart';
 import 'package:hervest_ai/router/app_router.dart';
@@ -11,6 +15,8 @@ import 'package:hervest_ai/provider/rescue_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await _bootstrapAuthSession();
+  _logApiHealth();
 
   runApp(
     MultiProvider(
@@ -22,7 +28,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AppStateController()),
 
         // Manages Profile data (name, contact, business, avatar)
-        ChangeNotifierProvider(create: (_) => ProfileController()),
+        ChangeNotifierProvider(create: (_) => ProfileController()..load()),
         ChangeNotifierProxyProvider<InventoryProvider, RescueProvider>(
           create: (_) {
             final rescue = RescueProvider();
@@ -39,6 +45,52 @@ void main() async {
       child: const SurplusApp(),
     ),
   );
+}
+
+Future<void> _bootstrapAuthSession() async {
+  final store = AppSessionStore.instance;
+  final refreshToken = await store.getRefreshToken();
+  final accessToken = await store.getAccessToken();
+
+  if ((refreshToken == null || refreshToken.isEmpty) &&
+      (accessToken == null || accessToken.isEmpty)) {
+    return;
+  }
+
+  if (refreshToken == null || refreshToken.isEmpty) return;
+
+  try {
+    const authApi = AuthApiService();
+    final session = await authApi.refreshSession(refreshToken: refreshToken);
+    if (session.accessToken.isNotEmpty && session.refreshToken.isNotEmpty) {
+      await store.setAuthTokens(
+        accessToken: session.accessToken,
+        refreshToken: session.refreshToken,
+      );
+      await store.setLoggedIn(true);
+      await store.setGuestMode(false);
+    }
+  } catch (_) {
+    await store.clearAuthTokens();
+    await store.setLoggedIn(false);
+  }
+}
+
+void _logApiHealth() {
+  const healthService = ApiHealthService();
+  healthService.check().then((result) {
+    if (result.ok) {
+      debugPrint(
+        '[API] Healthy at ${result.endpointTried} (base: ${ApiConfig.baseUrl})',
+      );
+    } else {
+      debugPrint(
+        '[API] Unhealthy at ${result.endpointTried} '
+        '(status: ${result.statusCode}, error: ${result.error}) '
+        '(base: ${ApiConfig.baseUrl})',
+      );
+    }
+  });
 }
 
 class SurplusApp extends StatelessWidget {

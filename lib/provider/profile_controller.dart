@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:hervest_ai/core/network/auth_api_service.dart';
+import 'package:hervest_ai/core/storage/app_session_store.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -51,6 +53,9 @@ class ProfileController extends ChangeNotifier {
     if (prefs.containsKey(_avatarPathKey)) {
       await prefs.remove(_avatarPathKey);
     }
+
+    await _syncFromBackend(prefs);
+
     _loaded = true;
     notifyListeners();
   }
@@ -96,5 +101,50 @@ class ProfileController extends ChangeNotifier {
     await prefs.remove(_avatarPathKey);
     avatarBytes = null;
     notifyListeners();
+  }
+
+  Future<void> _syncFromBackend(SharedPreferences prefs) async {
+    final token = await AppSessionStore.instance.getAccessToken();
+    if (token == null || token.isEmpty) return;
+
+    try {
+      const authApi = AuthApiService();
+      final user = await authApi.getProfile(accessToken: token);
+      final businesses = (user['businesses'] as Map?)?.cast<String, dynamic>() ?? {};
+
+      final backendFullName = (user['full_name'] ?? '').toString();
+      final backendEmail = (user['email'] ?? '').toString();
+      final backendPhone = (user['phone'] ?? '').toString();
+      final backendBusinessName = (businesses['business_name'] ?? '').toString();
+      final backendRole = (user['role'] ?? '').toString();
+      final backendBusinessType = (businesses['business_type'] ?? '').toString();
+
+      if (backendFullName.isNotEmpty) {
+        fullName = backendFullName;
+        await prefs.setString(_fullNameKey, backendFullName);
+      }
+      if (backendEmail.isNotEmpty) {
+        email = backendEmail;
+        await prefs.setString(_emailKey, backendEmail);
+      }
+      if (backendPhone.isNotEmpty) {
+        phone = backendPhone;
+        await prefs.setString(_phoneKey, backendPhone);
+      }
+      if (backendBusinessName.isNotEmpty) {
+        businessName = backendBusinessName;
+        await prefs.setString(_businessKey, backendBusinessName);
+      }
+      if (backendRole.isNotEmpty) {
+        role = backendRole;
+        await prefs.setString(_roleKey, backendRole);
+      }
+      if (backendBusinessType.isNotEmpty) {
+        businessType = backendBusinessType;
+        await prefs.setString(_businessTypeKey, backendBusinessType);
+      }
+    } catch (_) {
+      // Keep local profile cache when backend profile cannot be fetched.
+    }
   }
 }

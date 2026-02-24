@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
+import 'package:hervest_ai/core/network/auth_api_service.dart';
 import 'package:hervest_ai/core/utils/user_name_utils.dart';
 import 'package:hervest_ai/provider/app_state_controller_mock.dart';
 import 'package:hervest_ai/provider/profile_controller.dart';
@@ -21,6 +22,7 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final ImagePicker _imagePicker = ImagePicker();
+  final AuthApiService _authApi = const AuthApiService();
 
   @override
   void initState() {
@@ -63,6 +65,15 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 40),
             _buildNotificationSection(state),
             const SizedBox(height: 40),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => context.push('/profile/audit-logs'),
+                icon: const Icon(Icons.fact_check_outlined),
+                label: const Text('View Audit Logs (Owner)'),
+              ),
+            ),
+            const SizedBox(height: 20),
             _buildLogoutButton(),
             const SizedBox(height: 20),
           ],
@@ -380,6 +391,32 @@ class _ProfilePageState extends State<ProfilePage> {
   }) async {
     final nextFullName = fullName ?? profile.fullName;
     final nextEmail = email ?? profile.email;
+    final token = await AppSessionStore.instance.getAccessToken();
+
+    if (token != null && token.isNotEmpty) {
+      final apiBody = <String, dynamic>{};
+      if (fullName != null) apiBody['full_name'] = fullName;
+      if (phone != null) apiBody['phone'] = phone;
+      if (businessName != null) apiBody['business_name'] = businessName;
+      if (role != null) {
+        final mappedRole = _toApiRole(role);
+        if (mappedRole != null) apiBody['role'] = mappedRole;
+      }
+      if (businessType != null) {
+        final mappedBusinessType = _toApiBusinessType(businessType);
+        if (mappedBusinessType != null) {
+          apiBody['business_type'] = mappedBusinessType;
+        }
+      }
+
+      if (apiBody.isNotEmpty) {
+        try {
+          await _authApi.updateProfile(accessToken: token, body: apiBody);
+        } catch (_) {
+          // Keep local update if backend rejects unsupported values.
+        }
+      }
+    }
 
     await profile.updateProfile(
       fullName: nextFullName,
@@ -395,6 +432,44 @@ class _ProfilePageState extends State<ProfilePage> {
       appState.setUserName(nextFullName.trim());
     } else if (nextEmail.trim().isNotEmpty) {
       appState.setUserName(displayNameFromEmail(nextEmail.trim()));
+    }
+  }
+
+  String? _toApiRole(String role) {
+    switch (role.trim().toLowerCase()) {
+      case 'owner':
+        return 'owner';
+      case 'manager':
+        return 'manager';
+      case 'staff':
+        return 'staff';
+      default:
+        return null;
+    }
+  }
+
+  String? _toApiBusinessType(String businessType) {
+    switch (businessType.trim().toLowerCase()) {
+      case 'restaurant':
+        return 'restaurant';
+      case 'store owner':
+      case 'mini-mart':
+      case 'kiosk':
+        return 'store';
+      case 'farmer/agricultural business':
+        return 'farmer';
+      case 'bakery':
+        return 'bakery';
+      case 'catering service':
+        return 'catering';
+      case 'cafe/bistro':
+      case 'cafeteria':
+      case 'buka':
+        return 'cafe';
+      case 'food vendor':
+        return 'food_truck';
+      default:
+        return null;
     }
   }
 
@@ -633,8 +708,22 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     if (shouldLogout != true) return;
+    try {
+      final accessToken = await AppSessionStore.instance.getAccessToken();
+      final refreshToken = await AppSessionStore.instance.getRefreshToken();
+      if (accessToken != null && accessToken.isNotEmpty) {
+        const authApi = AuthApiService();
+        await authApi.signOut(
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+        );
+      }
+    } catch (_) {
+      // Do not block local logout on API failure.
+    }
     await AppSessionStore.instance.setLoggedIn(false);
     await AppSessionStore.instance.setGuestMode(false);
+    await AppSessionStore.instance.clearAuthTokens();
     if (context.mounted) {
       Navigator.of(context).popUntil((route) => route.isFirst);
       context.go('/landing');

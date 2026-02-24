@@ -18,7 +18,7 @@ class CashflowScreen extends StatelessWidget {
       body: SafeArea(
         child: Consumer<AppStateController>(
           builder: (context, state, child) {
-            final totals = _calculateTotals(state.transactions);
+            final totals = _totalsFromState(state);
             return SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Column(
@@ -33,6 +33,8 @@ class CashflowScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   _buildActionButtons(context),
                   const SizedBox(height: 32),
+                  _buildFinanceTools(context),
+                  const SizedBox(height: 18),
                   _buildRecentTransactionsHeader(context),
                   _buildTransactionList(state.transactions),
                 ],
@@ -120,6 +122,28 @@ class CashflowScreen extends StatelessWidget {
 
   Widget _buildHeader() {
     return const Text("Cashflow", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold));
+  }
+
+  Widget _buildFinanceTools(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () => context.push('/cashflow/budgets'),
+            icon: const Icon(Icons.savings_outlined),
+            label: const Text('Budgets'),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () => context.push('/cashflow/expenses'),
+            icon: const Icon(Icons.receipt_long_outlined),
+            label: const Text('Expenses'),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildRunwayCard(_CashflowTotals totals) {
@@ -227,6 +251,17 @@ class CashflowScreen extends StatelessWidget {
       }
     }
     return _CashflowTotals(income: income, expense: expense, net: income - expense);
+  }
+
+  _CashflowTotals _totalsFromState(AppStateController state) {
+    final report = state.cashflowReport;
+    if (report.isNotEmpty) {
+      final income = (report['total_income'] as num?)?.toDouble() ?? 0;
+      final expense = (report['total_expenses'] as num?)?.toDouble() ?? 0;
+      final net = (report['net_balance'] as num?)?.toDouble() ?? (income - expense);
+      return _CashflowTotals(income: income, expense: expense, net: net);
+    }
+    return _calculateTotals(state.transactions);
   }
 
   double _parseAmount(String raw) {

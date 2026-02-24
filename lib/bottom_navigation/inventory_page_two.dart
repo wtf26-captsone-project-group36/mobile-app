@@ -74,6 +74,7 @@ class _InventoryPageTwoState extends State<InventoryPageTwo> {
       }
       return;
     }
+    if (!context.mounted) return;
 
     // 1. Create the item using your new model structure
     final newItem = InventoryItem(
@@ -88,7 +89,8 @@ class _InventoryPageTwoState extends State<InventoryPageTwo> {
     );
 
     // 2. Push to Provider
-    Provider.of<InventoryProvider>(context, listen: false).addItem(newItem);
+    final provider = Provider.of<InventoryProvider>(context, listen: false);
+    await provider.addItemFromApi(newItem);
 
     if (!mounted) return;
 
