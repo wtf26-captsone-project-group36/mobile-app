@@ -8,10 +8,21 @@ class ExpenseApiService {
 
   Future<List<Map<String, dynamic>>> getExpenses({
     required String accessToken,
+    String? status,
+    String? category,
+    int limit = 20,
+    int offset = 0,
   }) async {
+    final params = <String>[];
+    if (status != null && status.isNotEmpty) params.add('status=$status');
+    if (category != null && category.isNotEmpty) params.add('category=$category');
+    params.add('limit=$limit');
+    params.add('offset=$offset');
+    final query = '?${params.join('&')}';
     final response = await _request(
       method: 'GET',
       path: '/expenses',
+      path: '/expenses$query',
       accessToken: accessToken,
     );
     final rows = response['expenses'];
@@ -21,12 +32,33 @@ class ExpenseApiService {
     return [];
   }
 
-  Future<Map<String, dynamic>> getExpenseSummary({
+  Future<Map<String, dynamic>> getExpenseById({
     required String accessToken,
+    required String id,
   }) async {
     final response = await _request(
       method: 'GET',
+      path: '/expenses/$id',
+      accessToken: accessToken,
+    );
+    final row = response['expense'];
+    if (row is Map) return row.cast<String, dynamic>();
+    return {};
+  }
+
+  Future<Map<String, dynamic>> getExpenseSummary({
+    required String accessToken,
+    DateTime? fromDate,
+    DateTime? toDate,
+  }) async {
+    final params = <String>[];
+    if (fromDate != null) params.add('from_date=${fromDate.toIso8601String()}');
+    if (toDate != null) params.add('to_date=${toDate.toIso8601String()}');
+    final query = params.isNotEmpty ? '?${params.join('&')}' : '';
+    final response = await _request(
+      method: 'GET',
       path: '/expenses/summary',
+      path: '/expenses/summary$query',
       accessToken: accessToken,
     );
     final row = response['summary'];

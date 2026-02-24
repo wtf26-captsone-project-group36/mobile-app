@@ -154,6 +154,30 @@ class AuthApiService {
     return {};
   }
 
+  Future<Map<String, dynamic>> getUserById({
+    required String accessToken,
+    required String userId,
+  }) async {
+    final response = await _get(
+      '/auth/user/$userId',
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+    final user = response['user'];
+    if (user is Map) return user.cast<String, dynamic>();
+    return {};
+  }
+
+  Future<void> deleteUser({
+    required String accessToken,
+    required String userId,
+  }) async {
+    await _requestWithoutBody(
+      method: 'DELETE',
+      path: '/auth/user/$userId',
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+  }
+
   Future<AuthSession> refreshSession({
     required String refreshToken,
   }) async {
@@ -371,6 +395,9 @@ class AuthApiService {
     final requestHeaders = {...?headers};
     if (method == 'GET') {
       return http.get(uri, headers: requestHeaders).timeout(const Duration(seconds: 12));
+    }
+    if (method == 'DELETE') {
+      return http.delete(uri, headers: requestHeaders).timeout(const Duration(seconds: 12));
     }
     return http
         .post(uri, headers: requestHeaders)

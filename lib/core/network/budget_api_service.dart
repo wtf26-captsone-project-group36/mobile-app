@@ -21,6 +21,20 @@ class BudgetApiService {
     return [];
   }
 
+  Future<Map<String, dynamic>> getBudgetById({
+    required String accessToken,
+    required String id,
+  }) async {
+    final response = await _request(
+      method: 'GET',
+      path: '/budgets/$id',
+      accessToken: accessToken,
+    );
+    final row = response['budget'];
+    if (row is Map) return row.cast<String, dynamic>();
+    return {};
+  }
+
   Future<Map<String, dynamic>> createBudget({
     required String accessToken,
     required Map<String, dynamic> body,
