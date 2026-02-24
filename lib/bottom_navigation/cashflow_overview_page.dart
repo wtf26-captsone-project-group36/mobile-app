@@ -4,14 +4,14 @@ import 'package:go_router/go_router.dart';
 class CashflowOverviewPage extends StatelessWidget {
   const CashflowOverviewPage({super.key});
 
-  // Design Palette from Mockups
+  // palette
   final Color primaryGreen = const Color(0xFF006B4D);
   final Color bgCream = const Color(0xFFFDFBF7);
   final Color cardWhite = Colors.white;
 
   @override
   Widget build(BuildContext context) {
-    // Media Query for responsive spacing
+    // Media Query
     final double width = MediaQuery.of(context).size.width;
 
     return Scaffold(
