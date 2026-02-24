@@ -33,7 +33,7 @@ class CashflowScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   _buildActionButtons(context),
                   const SizedBox(height: 32),
-                  _buildFinanceTools(context),
+                  //_buildFinanceTools(context),
                   const SizedBox(height: 18),
                   _buildRecentTransactionsHeader(context),
                   _buildTransactionList(state.transactions),
@@ -123,7 +123,7 @@ class CashflowScreen extends StatelessWidget {
   Widget _buildHeader() {
     return const Text("Cashflow", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold));
   }
-
+/*
   Widget _buildFinanceTools(BuildContext context) {
     return Row(
       children: [
@@ -145,7 +145,7 @@ class CashflowScreen extends StatelessWidget {
       ],
     );
   }
-
+*/
   Widget _buildRunwayCard(_CashflowTotals totals) {
     final bool positive = totals.net >= 0;
     return Container(

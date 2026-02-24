@@ -127,12 +127,12 @@ class OnboardingSecondScreen extends StatelessWidget {
                           /// Steps inside glass card
                           _StepRow(
                             number: "1",
-                            text: "AI detects near-expiry inventory",
+                            text: "AI detects near-expiry inventory & gives suggestions",
                           ),
                           SizedBox(height: 14),
                           _StepRow(
                             number: "2",
-                            text: "List items on Surplus Marketplace",
+                            text: "Export Inventory & Cashflow Reports",
                           ),
                           SizedBox(height: 14),
                           _StepRow(

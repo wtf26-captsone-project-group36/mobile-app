@@ -225,6 +225,256 @@ CREATE POLICY "Users own activity" ON activity_log
   FOR ALL USING (user_id = auth.uid());
 
 -- =============================================
+-- STORED PROCEDURES (RPCs)
+-- =============================================
+
+-- =============================================
+-- RPC: sell_inventory_item
+-- Purpose: Atomically decrement inventory and create transaction
+-- Prevents "ghost stock" by ensuring both operations succeed or both fail
+-- =============================================
+CREATE OR REPLACE FUNCTION public.sell_inventory_item(
+  p_business_id UUID,
+  p_inventory_id UUID,
+  p_quantity_sold DECIMAL,
+  p_selling_price DECIMAL,
+  p_transaction_category VARCHAR,
+  p_transaction_description TEXT
+)
+RETURNS TABLE (
+  success BOOLEAN,
+  message TEXT,
+  inventory_item_id UUID,
+  remaining_quantity DECIMAL,
+  transaction_id UUID,
+  error_code VARCHAR
+) AS $$
+DECLARE
+  v_current_quantity DECIMAL;
+  v_inventory_id_result UUID;
+  v_transaction_id UUID;
+  v_timestamp TIMESTAMPTZ;
+BEGIN
+  v_timestamp := NOW();
+
+  -- Input Validation
+  IF p_quantity_sold IS NULL OR p_quantity_sold <= 0 THEN
+    RETURN QUERY SELECT 
+      FALSE, 
+      'Quantity sold must be greater than 0',
+      NULL::UUID,
+      NULL::DECIMAL,
+      NULL::UUID,
+      'INVALID_QUANTITY'::VARCHAR;
+    RETURN;
+  END IF;
+
+  IF p_selling_price IS NULL OR p_selling_price < 0 THEN
+    RETURN QUERY SELECT 
+      FALSE,
+      'Selling price cannot be negative',
+      NULL::UUID,
+      NULL::DECIMAL,
+      NULL::UUID,
+      'INVALID_PRICE'::VARCHAR;
+    RETURN;
+  END IF;
+
+  -- Fetch current quantity with row lock to prevent race conditions
+  SELECT quantity, item_id INTO v_current_quantity, v_inventory_id_result
+  FROM inventory
+  WHERE item_id = p_inventory_id 
+    AND business_id = p_business_id
+    AND is_active = TRUE
+  FOR UPDATE;
+
+  -- Check if inventory item exists
+  IF v_inventory_id_result IS NULL THEN
+    RETURN QUERY SELECT 
+      FALSE,
+      'Inventory item not found',
+      NULL::UUID,
+      NULL::DECIMAL,
+      NULL::UUID,
+      'ITEM_NOT_FOUND'::VARCHAR;
+    RETURN;
+  END IF;
+
+  -- Check if sufficient stock available
+  IF v_current_quantity < p_quantity_sold THEN
+    RETURN QUERY SELECT 
+      FALSE,
+      'Insufficient inventory. Available: ' || v_current_quantity::TEXT || ', Requested: ' || p_quantity_sold::TEXT,
+      v_inventory_id_result,
+      v_current_quantity,
+      NULL::UUID,
+      'INSUFFICIENT_STOCK'::VARCHAR;
+    RETURN;
+  END IF;
+
+  -- Begin transaction (implicit in PostgreSQL function)
+  -- Step 1: Decrement inventory quantity
+  UPDATE inventory
+  SET quantity = quantity - p_quantity_sold
+  WHERE item_id = p_inventory_id
+    AND business_id = p_business_id;
+
+  -- Step 2: Create transaction (income) record
+  INSERT INTO transactions (
+    business_id,
+    date,
+    type,
+    amount,
+    category,
+    description
+  ) VALUES (
+    p_business_id,
+    v_timestamp,
+    'income',
+    p_selling_price * p_quantity_sold,
+    COALESCE(p_transaction_category, 'Sales'),
+    COALESCE(p_transaction_description, 'Item sale')
+  )
+  RETURNING transaction_id INTO v_transaction_id;
+
+  -- Success case: return updated values
+  RETURN QUERY SELECT 
+    TRUE,
+    'Sale completed successfully',
+    v_inventory_id_result,
+    v_current_quantity - p_quantity_sold,
+    v_transaction_id,
+    NULL::VARCHAR;
+
+EXCEPTION WHEN OTHERS THEN
+  -- Catch any database errors - transaction will auto-rollback
+  RETURN QUERY SELECT 
+    FALSE,
+    'Database error: ' || SQLERRM,
+    p_inventory_id,
+    NULL::DECIMAL,
+    NULL::UUID,
+    'DATABASE_ERROR'::VARCHAR;
+END;
+$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
+
+-- =============================================
+-- RPC: purchase_inventory_item
+-- Purpose: Atomically increment inventory and create transaction
+-- =============================================
+CREATE OR REPLACE FUNCTION public.purchase_inventory_item(
+  p_business_id UUID,
+  p_inventory_id UUID,
+  p_quantity_purchased DECIMAL,
+  p_cost_price DECIMAL,
+  p_transaction_category VARCHAR,
+  p_transaction_description TEXT
+)
+RETURNS TABLE (
+  success BOOLEAN,
+  message TEXT,
+  inventory_item_id UUID,
+  new_quantity DECIMAL,
+  transaction_id UUID,
+  error_code VARCHAR
+) AS $$
+DECLARE
+  v_current_quantity DECIMAL;
+  v_inventory_id_result UUID;
+  v_transaction_id UUID;
+  v_timestamp TIMESTAMPTZ;
+BEGIN
+  v_timestamp := NOW();
+
+  -- Input Validation
+  IF p_quantity_purchased IS NULL OR p_quantity_purchased <= 0 THEN
+    RETURN QUERY SELECT 
+      FALSE, 
+      'Quantity purchased must be greater than 0',
+      NULL::UUID,
+      NULL::DECIMAL,
+      NULL::UUID,
+      'INVALID_QUANTITY'::VARCHAR;
+    RETURN;
+  END IF;
+
+  IF p_cost_price IS NULL OR p_cost_price < 0 THEN
+    RETURN QUERY SELECT 
+      FALSE,
+      'Cost price cannot be negative',
+      NULL::UUID,
+      NULL::DECIMAL,
+      NULL::UUID,
+      'INVALID_PRICE'::VARCHAR;
+    RETURN;
+  END IF;
+
+  -- Fetch current quantity with row lock
+  SELECT quantity, item_id INTO v_current_quantity, v_inventory_id_result
+  FROM inventory
+  WHERE item_id = p_inventory_id 
+    AND business_id = p_business_id
+    AND is_active = TRUE
+  FOR UPDATE;
+
+  -- Check if inventory item exists
+  IF v_inventory_id_result IS NULL THEN
+    RETURN QUERY SELECT 
+      FALSE,
+      'Inventory item not found',
+      NULL::UUID,
+      NULL::DECIMAL,
+      NULL::UUID,
+      'ITEM_NOT_FOUND'::VARCHAR;
+    RETURN;
+  END IF;
+
+  -- Step 1: Increment inventory quantity
+  UPDATE inventory
+  SET quantity = quantity + p_quantity_purchased
+  WHERE item_id = p_inventory_id
+    AND business_id = p_business_id;
+
+  -- Step 2: Create transaction (expense) record
+  INSERT INTO transactions (
+    business_id,
+    date,
+    type,
+    amount,
+    category,
+    description
+  ) VALUES (
+    p_business_id,
+    v_timestamp,
+    'expense',
+    p_cost_price * p_quantity_purchased,
+    COALESCE(p_transaction_category, 'Purchases'),
+    COALESCE(p_transaction_description, 'Item purchase')
+  )
+  RETURNING transaction_id INTO v_transaction_id;
+
+  -- Success case
+  RETURN QUERY SELECT 
+    TRUE,
+    'Purchase recorded successfully',
+    v_inventory_id_result,
+    v_current_quantity + p_quantity_purchased,
+    v_transaction_id,
+    NULL::VARCHAR;
+
+EXCEPTION WHEN OTHERS THEN
+  -- Auto-rollback on any error
+  RETURN QUERY SELECT 
+    FALSE,
+    'Database error: ' || SQLERRM,
+    p_inventory_id,
+    NULL::DECIMAL,
+    NULL::UUID,
+    'DATABASE_ERROR'::VARCHAR;
+END;
+$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
+
+-- =============================================
 -- REALTIME
 -- =============================================
 ALTER PUBLICATION supabase_realtime ADD TABLE inventory;

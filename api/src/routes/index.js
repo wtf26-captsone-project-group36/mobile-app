@@ -4,6 +4,7 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const inventoryController = require('../controllers/inventoryController');
 const transactionController = require('../controllers/transactionController');
+const saleController = require('../controllers/saleController');
 const alertController = require('../controllers/alertController');
 const surplusController = require('../controllers/surplusController');
 const activityController = require('../controllers/activityController');
@@ -33,6 +34,12 @@ router.delete('/inventory/:id', authenticate, inventoryController.deleteItem);
 router.post('/transactions', authenticate, transactionController.insertTransaction);
 router.get('/transactions', authenticate, transactionController.selectTransactions);
 router.get('/transactions/report', authenticate, transactionController.getCashflowReport);
+
+// SALES ROUTES (ATOMIC INVENTORY + CASHFLOW)
+router.post('/sales/sell-item', authenticate, saleController.sellInventoryItem);
+router.post('/sales/purchase-item', authenticate, saleController.purchaseInventoryItem);
+router.get('/sales/history', authenticate, saleController.getSaleHistory);
+router.get('/sales/purchases', authenticate, saleController.getPurchaseHistory);
 
 // ALERT ROUTES
 router.get('/alerts', authenticate, alertController.getAlerts);

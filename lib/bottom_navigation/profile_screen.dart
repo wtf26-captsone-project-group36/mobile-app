@@ -48,9 +48,12 @@ class _ProfilePageState extends State<ProfilePage> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.black),
-            onPressed: () => context.push('/account-settings'),
+          Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: IconButton(
+              icon: const Icon(Icons.settings_outlined, color: Colors.black),
+              onPressed: () => context.push('/account-settings'),
+            ),
           ),
         ],
       ),

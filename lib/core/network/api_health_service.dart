@@ -22,8 +22,8 @@ class ApiHealthService {
   const ApiHealthService();
 
   Future<ApiHealthResult> check() async {
-    final apiHealth = ApiConfig.apiUri('/health');
-    final rootHealth = ApiConfig.uri('/health');
+    final apiHealth = ApiConfig.apiUri('/');
+    final rootHealth = ApiConfig.uri('/');
 
     try {
       final apiResponse = await http.get(apiHealth).timeout(

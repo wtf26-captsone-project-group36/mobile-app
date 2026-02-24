@@ -53,7 +53,7 @@ class LandingPage extends StatelessWidget {
 
               const SizedBox(height: 60),
 
-              // 1. WhatsApp / Phone Option (because SMEs might prefer it)
+              // 1. WhatsApp (because SMEs might prefer it)
               _buildAuthButton(
                 label: "Continue with WhatsApp",
                 icon: FontAwesomeIcons.whatsapp,
@@ -64,7 +64,7 @@ class LandingPage extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              // 2. Google Option (Standard for Android)
+              /* 2. Google Option (Standard for Android)
               _buildAuthButton(
                 label: "Continue with Google",
                 icon: FontAwesomeIcons.google,
@@ -73,7 +73,8 @@ class LandingPage extends StatelessWidget {
                 showBorder: true,
                 onPressed: () {},
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 12), 
+              */
 
               // 3. Facebook Option (Critical for African SMEs)
               _buildAuthButton(

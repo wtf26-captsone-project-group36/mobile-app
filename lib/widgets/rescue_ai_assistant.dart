@@ -22,7 +22,7 @@ class RescueAIAssistantButton extends StatelessWidget {
   }
 
   void _openAssistant(BuildContext context) {
-    openRescueAssistantSheet(context);
+    openRescueAssistantSheet(context); 
   }
 }
 
