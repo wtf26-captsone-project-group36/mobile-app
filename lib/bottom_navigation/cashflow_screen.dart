@@ -26,6 +26,10 @@ class CashflowScreen extends StatelessWidget {
                 children: [
                   const SizedBox(height: 20),
                   _buildHeader(),
+                  // NEW: Show anomaly alert if present
+                  if (state.anomalies.isNotEmpty)
+                    _buildAnomalyBanner(context, state.anomalies.first),
+                  
                   const SizedBox(height: 24),
                   _buildBalanceCard(width, totals.net),
                   const SizedBox(height: 20),
@@ -33,7 +37,7 @@ class CashflowScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   _buildActionButtons(context),
                   const SizedBox(height: 32),
-                  //_buildFinanceTools(context),
+                  _buildAiInsightsLink(context), // NEW: Link to full insights
                   const SizedBox(height: 18),
                   _buildRecentTransactionsHeader(context),
                   _buildTransactionList(state.transactions),
@@ -123,6 +127,67 @@ class CashflowScreen extends StatelessWidget {
   Widget _buildHeader() {
     return const Text("Cashflow", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold));
   }
+
+  // NEW: Anomaly Banner Widget
+  Widget _buildAnomalyBanner(BuildContext context, Map<String, dynamic> anomaly) {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.shade200),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Colors.red),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              anomaly['message'] ?? "Unusual spending detected",
+              style: TextStyle(color: Colors.red.shade900, fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+          ),
+          const Icon(Icons.chevron_right, color: Colors.red),
+        ],
+      ),
+    );
+  }
+
+  // NEW: Link to AI Insights Page
+  Widget _buildAiInsightsLink(BuildContext context) {
+    return InkWell(
+      onTap: () => context.push('/ai-insights'), // Ensure this route is added to router
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE3F2FD), // Light Blue
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.blue.shade100),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.auto_awesome, color: Colors.blue.shade700),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("AI Business Insights", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade900)),
+                    Text("View forecasts & risk analysis", style: TextStyle(fontSize: 12, color: Colors.blue.shade700)),
+                  ],
+                ),
+              ],
+            ),
+            Icon(Icons.arrow_forward, color: Colors.blue.shade700),
+          ],
+        ),
+      ),
+    );
+  }
+
 /*
   Widget _buildFinanceTools(BuildContext context) {
     return Row(

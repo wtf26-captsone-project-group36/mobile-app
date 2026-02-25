@@ -40,12 +40,16 @@ import 'package:hervest_ai/bottom_navigation/inventory_page_four.dart';
 // Suggestions and impact
 import 'package:hervest_ai/bottom_navigation/suggestions_logistics_page.dart';
 import 'package:hervest_ai/bottom_navigation/sugg_impact_dashboard_page.dart';
+import 'package:hervest_ai/bottom_navigation/suggestions_success_page.dart';
 import 'package:hervest_ai/bottom_navigation/rescue_pledges_history_page.dart';
 
 // Cashflow flow
 import 'package:hervest_ai/bottom_navigation/cashflow_addexpense_page.dart';
 import 'package:hervest_ai/bottom_navigation/cashflow_addincome_page.dart';
 import 'package:hervest_ai/bottom_navigation/cashflow_transactionhistory_page.dart';
+
+// AI Insights
+import 'package:hervest_ai/bottom_navigation/ai_insights_page.dart';
 
 // Search overlay
 import 'package:hervest_ai/bottom_navigation/search/global_search_overlay.dart';
@@ -160,6 +164,24 @@ final GoRouter appRouter = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (context, state) =>
           const MaterialPage(fullscreenDialog: true, child: GlobalSearchPage()),
+    ),
+
+    // Add this new route for the AI Insights page
+    GoRoute(
+      path: '/ai-insights',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const AiInsightsPage(),
+    ),
+
+    // Find your existing '/inventory/donation-success' route and update it
+    // to handle the 'extra' parameter we passed to it.
+    GoRoute(
+      path: '/inventory/donation-success',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final item = state.extra as InventoryItem?;
+        return SuggestionSuccessPage(item: item);
+      },
     ),
 
     // Main app shell (bottom nav)
