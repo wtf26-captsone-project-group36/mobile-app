@@ -36,7 +36,14 @@ class _InventoryPageTwoState extends State<InventoryPageTwo> {
     'Beverages', 
     'Grains & Cereals', 
     'Meat & Poultry', 
-    'Dairy'
+    'Dairy',
+    'Baked Goods',
+    'Frozen Foods',
+    'Canned Goods',
+    'Spices & Seasonings',
+    'Oils & Sauces',
+    'Snacks',
+    'Other',
   ];
 
   Future<void> _pickDate(BuildContext context, bool isExpiry) async {
