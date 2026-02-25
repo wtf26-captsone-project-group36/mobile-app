@@ -36,6 +36,8 @@ class CashflowScreen extends StatelessWidget {
                   _buildRunwayCard(totals),
                   const SizedBox(height: 20),
                   _buildActionButtons(context),
+                  const SizedBox(height: 16),
+                  _buildFinanceTools(context),
                   const SizedBox(height: 32),
                   _buildAiInsightsLink(context), // NEW: Link to full insights
                   const SizedBox(height: 18),
@@ -52,7 +54,7 @@ class CashflowScreen extends StatelessWidget {
 
   Widget _buildBalanceCard(double width, double netBalance) {
     return Container(
-      width: width,
+      width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: primaryGreen,
@@ -188,7 +190,6 @@ class CashflowScreen extends StatelessWidget {
     );
   }
 
-/*
   Widget _buildFinanceTools(BuildContext context) {
     return Row(
       children: [
@@ -210,7 +211,7 @@ class CashflowScreen extends StatelessWidget {
       ],
     );
   }
-*/
+
   Widget _buildRunwayCard(_CashflowTotals totals) {
     final bool positive = totals.net >= 0;
     return Container(
