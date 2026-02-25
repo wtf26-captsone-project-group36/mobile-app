@@ -16,6 +16,23 @@ class SuggestionsLogisticsPage extends StatelessWidget {
   final Color primaryGreen = const Color(0xFF006B4D);
   final Color creamBg = const Color(0xFFFDFBF7);
 
+  // Source: Simplified CO2e factors (kg CO2e per kg of food) based on industry averages.
+  // In a full-scale app, this could be fetched from a remote configuration.
+  static const Map<String, double> _co2eFactors = {
+    'Fresh Produce': 0.5,
+    'Beverages': 0.8,
+    'Grains & Cereals': 0.7,
+    'Meat & Poultry': 7.5, // Higher impact
+    'Dairy': 3.2,
+    'Baked Goods': 1.0,
+    'Frozen Foods': 1.5,
+    'Canned Goods': 1.2,
+    'Spices & Seasonings': 0.9,
+    'Oils & Sauces': 2.0,
+    'Snacks': 1.8,
+    'Other': 1.5, // A general average
+  };
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -127,6 +144,11 @@ class SuggestionsLogisticsPage extends StatelessWidget {
   }
 
   Widget _buildImpactPreview() {
+    final co2Savings = _calculateCo2Savings(item);
+    final message = co2Savings != null
+        ? "By donating, you are preventing carbon emissions equivalent to ${co2Savings.toStringAsFixed(1)}kg of CO2."
+        : "Donating this item helps reduce food waste and its environmental impact.";
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -137,9 +159,10 @@ class SuggestionsLogisticsPage extends StatelessWidget {
         children: [
           const Icon(Icons.volunteer_activism, color: Colors.blue),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
-              "By donating, you are preventing carbon emissions equivalent to 12kg of CO2.", style: TextStyle(fontSize: 13, color: Color(0xFF1565C0)),
+              message,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF1565C0)),
             ),
           ),
         ],
@@ -160,5 +183,26 @@ class SuggestionsLogisticsPage extends StatelessWidget {
         child: const Text("Confirm & Notify Partner", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
+  }
+
+  /// Calculates the estimated CO2 savings in kg.
+  /// Returns null if a reliable calculation cannot be made.
+  double? _calculateCo2Savings(InventoryItem item) {
+    double? weightInKg;
+    final unit = item.unit.toLowerCase();
+
+    if (unit.contains('kg')) {
+      weightInKg = item.quantity;
+    } else if (unit == 'g' || unit == 'grams') {
+      weightInKg = item.quantity / 1000.0;
+    }
+
+    // If weight cannot be determined, we can't calculate CO2 savings.
+    if (weightInKg == null) {
+      return null;
+    }
+
+    final factor = _co2eFactors[item.category] ?? _co2eFactors['Other']!;
+    return weightInKg * factor;
   }
 }
