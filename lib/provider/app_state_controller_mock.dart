@@ -62,11 +62,7 @@ class AppStateController extends ChangeNotifier {
   ];
 
   // Mock Transaction Data (Page 8-11)
-  List<Map<String, dynamic>> transactions = [
-    {'title': 'Electricity bill', 'amount': 'NGN 10,000', 'type': 'Expense', 'date': 'Feb 20'},
-    {'title': 'Direct Sales', 'amount': 'NGN 45,000', 'type': 'Income', 'date': 'Feb 21'},
-    {'title': 'Water Refill', 'amount': 'NGN 2,500', 'type': 'Expense', 'date': 'Feb 18'},
-  ];
+  List<Map<String, dynamic>> transactions = [];
 
   Future<void> addTransaction({
     required String title,
