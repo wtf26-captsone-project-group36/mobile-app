@@ -20,21 +20,21 @@ class _InventoryPageThreeState extends State<InventoryPageThree> {
   final Color validGreen = const Color(0xFF4CAF50);
 
   Future<void> _handleFinalSave() async {
+    final router = GoRouter.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
     final isGuest = await AppSessionStore.instance.isGuest();
     if (isGuest) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text("Guest access: Sign up to save these items permanently."),
-            action: SnackBarAction(label: 'Sign Up', onPressed: () => context.push('/signup')),
-          ),
-        );
-      }
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: const Text("Guest access: Sign up to save these items permanently."),
+          action: SnackBarAction(label: 'Sign Up', onPressed: () => router.push('/signup')),
+        ),
+      );
       return;
     }
     
     // Logic: Navigate to Page 4 (Success)
-    context.go('/inventory/success'); 
+    router.go('/inventory/success');
   }
 
   @override

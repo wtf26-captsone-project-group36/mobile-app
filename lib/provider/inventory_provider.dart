@@ -74,7 +74,7 @@ class InventoryProvider extends ChangeNotifier {
         accessToken: token,
         itemId: itemId,
         body: {
-          if (name != null) 'name': name,
+          if (name != null) 'item_name': name,
           if (category != null) 'category': category,
           if (quantity != null) 'quantity': quantity,
           if (unit != null) 'unit': unit,
@@ -120,7 +120,7 @@ class InventoryProvider extends ChangeNotifier {
       final created = await _api.createInventoryItem(
         accessToken: token,
         body: {
-          'name': item.name,
+          'item_name': item.name,
           'quantity': item.quantity,
           'unit': item.unit,
           'category': item.category,
