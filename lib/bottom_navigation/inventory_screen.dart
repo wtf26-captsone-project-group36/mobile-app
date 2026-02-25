@@ -190,7 +190,7 @@ class _InventoryPageOneState extends State<InventoryPageOne> {
       child: Column(
         children: [
           SearchBar(
-            hintText: "Search 50+ items...",
+            hintText: "Search ${items.length} items...",
             elevation: WidgetStateProperty.all(0),
             backgroundColor: WidgetStateProperty.all(Colors.white),
             shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
