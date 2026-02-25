@@ -40,10 +40,14 @@ class _InventoryPageTwoState extends State<InventoryPageTwo> {
   ];
 
   Future<void> _pickDate(BuildContext context, bool isExpiry) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
+      initialDate: today,
+      // If picking expiry, disable past dates. If picking received date, allow past.
+      firstDate: isExpiry ? today : DateTime(2020),
       lastDate: DateTime(2101),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(colorScheme: ColorScheme.light(primary: primaryGreen)),
@@ -60,6 +64,23 @@ class _InventoryPageTwoState extends State<InventoryPageTwo> {
 
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Validation: Ensure expiry date is selected and valid
+    if (_expiryDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select an expiry date.")),
+      );
+      return;
+    }
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    if (_expiryDate!.isBefore(today)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Cannot add items that are already expired.")),
+      );
+      return;
+    }
 
     // Capture context-dependent members before the async gap.
     final scaffoldMessenger = ScaffoldMessenger.of(context);
