@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hervest_ai/models/inventory_model.dart';
+import 'package:intl/intl.dart';
 
 class SuggestionSuccessPage extends StatelessWidget {
-  const SuggestionSuccessPage({super.key});
+  final InventoryItem? item;
+  const SuggestionSuccessPage({super.key, this.item});
 
   final Color primaryGreen = const Color(0xFF006B4D);
   final Color creamBg = const Color(0xFFFDFBF7);
@@ -75,6 +78,13 @@ class SuggestionSuccessPage extends StatelessWidget {
   }
 
   Widget _buildImpactRewardCard() {
+    final double value = item?.purchasePrice ?? 0;
+    // Simple formula: 1 point per 100 NGN of value, with a minimum of 5 points.
+    final int points = value > 0 ? (value / 100).ceil().clamp(5, 1000) : 5;
+    // Simple formula: 1 person helped per 5000 NGN value.
+    final int peopleHelped = (value / 5000).floor();
+    final currencyFormat = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -91,8 +101,11 @@ class SuggestionSuccessPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text("Social Credit Earned", style: TextStyle(fontSize: 12, color: Colors.grey)),
-                const Text("+50 Points", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue)),
-                Text("You've helped 20+ people today", style: TextStyle(fontSize: 11, color: Colors.blue.shade700)),
+                Text("+$points Points", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue)),
+                Text(
+                  peopleHelped > 0 ? "You've helped $peopleHelped+ people today!" : "Donation value: ${currencyFormat.format(value)}",
+                  style: TextStyle(fontSize: 11, color: Colors.blue.shade700),
+                ),
               ],
             ),
           )

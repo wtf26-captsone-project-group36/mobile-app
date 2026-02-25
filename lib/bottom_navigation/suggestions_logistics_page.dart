@@ -103,7 +103,7 @@ class SuggestionsLogisticsPage extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isSelected ? primaryGreen.withOpacity(0.05) : Colors.white,
+        color: isSelected ? primaryGreen.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: isSelected ? primaryGreen : Colors.grey.shade200, width: 2),
       ),
@@ -139,8 +139,7 @@ class SuggestionsLogisticsPage extends StatelessWidget {
           const SizedBox(width: 12),
           const Expanded(
             child: Text(
-              "By donating, you are preventing carbon emissions equivalent to 12kg of CO2.",
-              style: const TextStyle(fontSize: 13, color: Color(0xFF1565C0)),
+              "By donating, you are preventing carbon emissions equivalent to 12kg of CO2.", style: TextStyle(fontSize: 13, color: Color(0xFF1565C0)),
             ),
           ),
         ],
@@ -157,7 +156,7 @@ class SuggestionsLogisticsPage extends StatelessWidget {
           backgroundColor: primaryGreen,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        onPressed: () => context.go('/inventory/donation-success'),
+        onPressed: () => context.go('/inventory/donation-success', extra: item),
         child: const Text("Confirm & Notify Partner", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
