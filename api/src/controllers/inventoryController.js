@@ -367,3 +367,4 @@ function validateInventoryUpdates(updates, existing) {
 }
 
 module.exports = { insertItem, selectItems, updateItem, deleteItem };
+}

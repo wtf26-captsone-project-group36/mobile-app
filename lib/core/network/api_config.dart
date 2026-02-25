@@ -1,6 +1,14 @@
 class ApiConfig {
-  // Override with:
+
+  // Old Info Override with:
   // flutter run --dart-define=API_BASE_URL=http://your-server:3000
+
+  
+  /// **Production Configuration**
+  /// To build for production with a clean database, run:
+  /// `flutter build apk --dart-define=API_BASE_URL=https://api.hervest.ai`
+  ///
+  /// The default value below is for the **Development/Test** environment.
   static const String _rawBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'http://18.175.213.46:3000',

@@ -1,4 +1,6 @@
-const rawInventoryData = [
+const List<Map<String, dynamic>> rawInventoryData = [];
+
+/*const rawInventoryData = [
   {
     "item_id": "c005b18e-14bf-4f63-a5b1-0b00e0c64d57",
     "business_id": "dd426377-9bc6-4f59-b078-48794f1af5b3",
@@ -1165,4 +1167,5 @@ const rawInventoryData = [
     "category": "Beverages",
     "created_at": "2024-07-13T17:38:00Z"
   }
-];
+]; 
+*/
