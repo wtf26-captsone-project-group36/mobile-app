@@ -63,11 +63,20 @@ class InventoryProvider extends ChangeNotifier {
       dateReceived: current.dateReceived,
     );
     _validateItem(updated);
+
+    final token = await AppSessionStore.instance.getAccessToken();
+    if (token == null || token.isEmpty) {
+      // If offline/no-token, maybe allow local update or return? 
+      // For strict sync, we return.
+      return;
+    }
+
+    // Optimistic Update
     _items[index] = updated;
     notifyListeners();
 
-    final token = await AppSessionStore.instance.getAccessToken();
-    if (token == null || token.isEmpty) return;
+    /* Back to optimist way: final token = await AppSessionStore.instance.getAccessToken();
+    if (token == null || token.isEmpty) return; */
 
     try {
       final apiUpdated = await _api.updateInventoryItem(
@@ -88,7 +97,9 @@ class InventoryProvider extends ChangeNotifier {
         notifyListeners();
       }
     } catch (_) {
-      // Keep optimistic update on API error.
+      // Revert optimistic update on API error (e.g. Permission Denied)
+      _items[index] = current;
+      notifyListeners();
     }
   }
 
@@ -131,7 +142,8 @@ class InventoryProvider extends ChangeNotifier {
       final mapped = _fromApi(created);
       addItem(mapped);
     } catch (_) {
-      addItem(item);
+      // Do NOT add locally if API fails (e.g. 403 Forbidden for Staff)
+      rethrow;
     }
   }
 

@@ -91,10 +91,22 @@ class _InventoryPageTwoState extends State<InventoryPageTwo> {
     );
 
     // 2. Push to Provider
-    await provider.addItemFromApi(newItem);
+
+        /* await provider.addItemFromApi(newItem);
 
     // 3. Navigate to Success (Page 4) or Review (Page 3)
-    navigator.push('/inventory/success');
+    navigator.push('/inventory/success'); */
+    
+    try {
+      await provider.addItemFromApi(newItem);
+      // 3. Navigate to Success (Page 4) only if API succeeds
+      navigator.push('/inventory/success');
+    } catch (e) {
+      // Handle permission error (e.g. Staff trying to add item)
+      scaffoldMessenger.showSnackBar(
+        SnackBar(content: Text("Failed to save item: ${e.toString()}")),
+      );
+    }
   }
 
   @override
