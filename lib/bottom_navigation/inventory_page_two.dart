@@ -61,20 +61,22 @@ class _InventoryPageTwoState extends State<InventoryPageTwo> {
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Capture context-dependent members before the async gap.
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final navigator = GoRouter.of(context);
+    final provider = Provider.of<InventoryProvider>(context, listen: false);
+
     // Check Guest Status
     final isGuest = await AppSessionStore.instance.isGuest();
     if (isGuest) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text("Guest users cannot save items permanently."),
-            action: SnackBarAction(label: 'Sign Up', onPressed: () => context.push('/signup')),
-          ),
-        );
-      }
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: const Text("Guest users cannot save items permanently."),
+          action: SnackBarAction(label: 'Sign Up', onPressed: () => navigator.push('/signup')),
+        ),
+      );
       return;
     }
-    if (!context.mounted) return;
 
     // 1. Create the item using your new model structure
     final newItem = InventoryItem(
@@ -89,13 +91,10 @@ class _InventoryPageTwoState extends State<InventoryPageTwo> {
     );
 
     // 2. Push to Provider
-    final provider = Provider.of<InventoryProvider>(context, listen: false);
     await provider.addItemFromApi(newItem);
 
-    if (!mounted) return;
-
     // 3. Navigate to Success (Page 4) or Review (Page 3)
-    context.push('/inventory/success'); 
+    navigator.push('/inventory/success');
   }
 
   @override
@@ -205,7 +204,7 @@ class _InventoryPageTwoState extends State<InventoryPageTwo> {
 
   Widget _buildDropdown() {
     return DropdownButtonFormField<String>(
-      value: _selectedCategory,
+      initialValue: _selectedCategory,
       decoration: AppInputStyles.decoration(),
       hint: const Text("Select category"),
       items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),

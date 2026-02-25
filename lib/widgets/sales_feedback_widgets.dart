@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:hervest_ai/provider/sales_provider.dart';
 
-/// Reusable widget for displaying sales success/error feedback
 class SaleFeedbackWidget extends StatefulWidget {
-  const SaleFeedbackWidget({Key? key}) : super(key: key);
+  const SaleFeedbackWidget({super.key});
 
   @override
   State<SaleFeedbackWidget> createState() => _SaleFeedbackWidgetState();
@@ -18,15 +17,19 @@ class _SaleFeedbackWidgetState extends State<SaleFeedbackWidget> {
         // Show success message
         if (salesProvider.successMessage != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            _showSuccessSnackBar(context, salesProvider.successMessage!);
-            salesProvider.clearSuccess();
+            if (mounted) {
+              _showSuccessSnackBar(context, salesProvider.successMessage!);
+              salesProvider.clearSuccess();
+            }
           });
         }
 
         // Show error message
         if (salesProvider.errorMessage != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            _showErrorDialog(context, salesProvider.errorMessage!);
+            if (mounted) {
+              _showErrorDialog(context, salesProvider.errorMessage!);
+            }
           });
         }
 
@@ -81,12 +84,12 @@ class SellInventoryDialog extends StatefulWidget {
   final double? lastSellingPrice;
 
   const SellInventoryDialog({
-    Key? key,
+    super.key,
     required this.inventoryId,
     required this.itemName,
     required this.availableQuantity,
     this.lastSellingPrice,
-  }) : super(key: key);
+  });
 
   @override
   State<SellInventoryDialog> createState() => _SellInventoryDialogState();
@@ -145,6 +148,7 @@ class _SellInventoryDialogState extends State<SellInventoryDialog> {
     }
 
     setState(() => _isProcessing = true);
+    final navigator = Navigator.of(context);
 
     try {
       final success = await salesProvider.sellItem(
@@ -155,8 +159,8 @@ class _SellInventoryDialogState extends State<SellInventoryDialog> {
         transactionDescription: 'Sale of ${widget.itemName}',
       );
 
-      if (success && mounted) {
-        Navigator.pop(context, true);
+      if (success) {
+        navigator.pop(true);
       }
     } finally {
       if (mounted) {
@@ -351,11 +355,11 @@ class TransactionWarningBanner extends StatelessWidget {
   final bool isError;
 
   const TransactionWarningBanner({
-    Key? key,
+    super.key,
     required this.message,
     this.onDismiss,
     this.isError = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -405,17 +409,17 @@ class TransactionLoadingOverlay extends StatelessWidget {
   final String message;
 
   const TransactionLoadingOverlay({
-    Key? key,
+    super.key,
     required this.isVisible,
     this.message = 'Processing transaction...',
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     if (!isVisible) return const SizedBox.shrink();
 
     return Material(
-      color: Colors.black.withOpacity(0.3),
+      color: Colors.black.withValues(alpha: 0.3),
       child: Center(
         child: Card(
           child: Padding(

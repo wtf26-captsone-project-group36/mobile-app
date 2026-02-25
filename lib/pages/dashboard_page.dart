@@ -105,7 +105,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
-                      color: primaryGreen.withOpacity(0.15),
+                      color: primaryGreen.withValues(alpha: 0.15),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -139,7 +139,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Text(
                       "Welcome back,",
                       style: TextStyle(
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withValues(alpha: 0.5),
                         fontSize: welcomeFontSize,
                       ),
                       maxLines: 1,
@@ -174,7 +174,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: primaryGreen.withOpacity(0.2), width: 2),
+          border: Border.all(color: primaryGreen.withValues(alpha: 0.2), width: 2),
         ),
         child: CircleAvatar(
           radius: 26,
@@ -405,8 +405,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           contentPadding: EdgeInsets.zero,
           leading: CircleAvatar(
             backgroundColor: item.status == ItemStatus.expired
-                ? Colors.red.withOpacity(0.1)
-                : Colors.orange.withOpacity(0.1),
+                ? Colors.red.withValues(alpha: 0.1)
+                : Colors.orange.withValues(alpha: 0.1),
             child: Icon(
               Icons.history,
               size: 18,
@@ -435,10 +435,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.black.withOpacity(0.05)),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 15,
               offset: const Offset(0, 5),
             ),
@@ -463,7 +463,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       height: 50,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.05),
+        color: Colors.black.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -539,8 +539,8 @@ class _StatCardState extends State<_StatCard> {
   Widget build(BuildContext context) {
     final bool active = _isHovered || _isPressed;
     final Color borderColor = active
-        ? widget.color.withOpacity(0.55)
-        : widget.color.withOpacity(0.18);
+        ? widget.color.withValues(alpha: 0.55)
+        : widget.color.withValues(alpha: 0.18);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -563,7 +563,7 @@ class _StatCardState extends State<_StatCard> {
             border: Border.all(color: borderColor, width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(active ? 0.12 : 0.06),
+                color: Colors.black.withValues(alpha: active ? 0.12 : 0.06),
                 blurRadius: active ? 18 : 10,
                 offset: const Offset(0, 6),
               ),
@@ -576,7 +576,7 @@ class _StatCardState extends State<_StatCard> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: widget.color.withOpacity(active ? 0.18 : 0.1),
+                  color: widget.color.withValues(alpha: active ? 0.18 : 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(widget.icon, color: widget.color, size: 20),

@@ -84,7 +84,7 @@ class _InventoryPageThreeState extends State<InventoryPageThree> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: errors > 0 ? errorRed.withOpacity(0.1) : validGreen.withOpacity(0.1),
+        color: errors > 0 ? errorRed.withValues(alpha: 0.1) : validGreen.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
