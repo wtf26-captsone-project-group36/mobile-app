@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hervest_ai/provider/app_state_controller_mock.dart';
-import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hervest_ai/core/network/budget_api_service.dart';
+import 'package:hervest_ai/core/storage/app_session_store.dart';
+import 'package:intl/intl.dart';
 
 class BudgetsPage extends StatefulWidget {
   const BudgetsPage({super.key});
@@ -10,105 +12,259 @@ class BudgetsPage extends StatefulWidget {
 }
 
 class _BudgetsPageState extends State<BudgetsPage> {
+  final BudgetApiService _budgetService = BudgetApiService();
+  final Color _primaryGreen = const Color(0xFF006B4D);
+  final Color _bgCream = const Color(0xFFFDFBF7);
+
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _budgets = [];
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context.read<AppStateController>().loadBudgetsFromBackend();
-    });
+    _loadBudgets();
+  }
+
+  Future<void> _loadBudgets() async {
+    setState(() => _isLoading = true);
+    try {
+      final token = await AppSessionStore.instance.getAccessToken();
+      if (token != null) {
+        final data = await _budgetService.getBudgets(accessToken: token);
+        if (mounted) {
+          setState(() {
+            _budgets = data;
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        // Silently fail or show generic error if needed
+      }
+    }
+  }
+
+  Future<void> _handleCreateBudget(String category, double amount) async {
+    try {
+      final token = await AppSessionStore.instance.getAccessToken();
+      if (token == null) return;
+
+      await _budgetService.createBudget(
+        accessToken: token,
+        body: {
+          'category': category,
+          'total_amount': amount,
+          'period': 'monthly',
+        },
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Budget set successfully')),
+        );
+        Navigator.of(context).pop(); // Close dialog
+        _loadBudgets(); // Refresh history
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to set budget: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteBudget(String id) async {
+    try {
+      final token = await AppSessionStore.instance.getAccessToken();
+      if (token == null) return;
+
+      await _budgetService.deleteBudget(accessToken: token, id: id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Budget removed')),
+        );
+        _loadBudgets();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not delete budget')),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppStateController>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Budgets')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openCreateDialog(context),
-        icon: const Icon(Icons.add),
-        label: const Text('New Budget'),
+      backgroundColor: _bgCream,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text(
+          "Monthly Budgets",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(12),
-        itemCount: state.budgets.length,
-        itemBuilder: (context, index) {
-          final row = state.budgets[index];
-          final id = (row['id'] ?? row['budget_id'] ?? '').toString();
-          final name = (row['name'] ?? row['title'] ?? 'Budget').toString();
-          final amount = (row['amount'] ?? row['limit'] ?? row['budget_amount'] ?? 0)
-              .toString();
-          final category = (row['category'] ?? 'General').toString();
-          return Card(
-            child: ListTile(
-              title: Text(name),
-              subtitle: Text('$category • NGN $amount'),
-              trailing: PopupMenuButton<String>(
-                onSelected: (value) async {
-                  if (id.isEmpty) return;
-                  if (value == 'delete') {
-                    await state.deleteBudget(id);
-                  }
-                },
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'delete', child: Text('Delete')),
-                ],
-              ),
-            ),
-          );
-        },
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator(color: _primaryGreen))
+          : _budgets.isEmpty
+              ? _buildEmptyState()
+              : ListView.builder(
+                  padding: const EdgeInsets.all(20),
+                  itemCount: _budgets.length,
+                  itemBuilder: (context, index) => _buildBudgetCard(_budgets[index]),
+                ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddBudgetDialog(context),
+        backgroundColor: _primaryGreen,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text("Set Budget", style: TextStyle(color: Colors.white)),
       ),
     );
   }
 
-  Future<void> _openCreateDialog(BuildContext context) async {
-    final nameController = TextEditingController();
-    final amountController = TextEditingController();
-    final categoryController = TextEditingController();
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Create Budget'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.savings_outlined, size: 64, color: Colors.grey.shade300),
+          const SizedBox(height: 16),
+          const Text(
+            "No budgets set yet",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black54),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            "Set limits for categories like 'Food' or 'Transport'",
+            style: TextStyle(color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBudgetCard(Map<String, dynamic> budget) {
+    final category = budget['category'] ?? 'Unknown';
+    final total = (budget['total_amount'] as num?)?.toDouble() ?? 0.0;
+    final remaining = (budget['remaining_amount'] as num?)?.toDouble() ?? 0.0;
+    final spent = total - remaining;
+    final progress = total > 0 ? spent / total : 0.0;
+    final isCritical = progress > 0.9;
+
+    return Dismissible(
+      key: Key(budget['id'].toString()),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async => await _confirmDelete(context),
+      onDismissed: (_) => _deleteBudget(budget['id'].toString()),
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        color: Colors.red,
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 0,
+        color: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(category, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(
+                    "₦${NumberFormat('#,##0').format(remaining)} left",
+                    style: TextStyle(
+                      color: isCritical ? Colors.red : _primaryGreen,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
-              TextField(
-                controller: amountController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Amount'),
+              const SizedBox(height: 12),
+              LinearProgressIndicator(
+                value: progress.clamp(0.0, 1.0),
+                backgroundColor: Colors.grey.shade100,
+                color: isCritical ? Colors.red : (progress > 0.7 ? Colors.orange : _primaryGreen),
+                minHeight: 8,
+                borderRadius: BorderRadius.circular(4),
               ),
-              TextField(
-                controller: categoryController,
-                decoration: const InputDecoration(labelText: 'Category'),
+              const SizedBox(height: 8),
+              Text(
+                "Spent ₦${NumberFormat('#,##0').format(spent)} of ₦${NumberFormat('#,##0').format(total)}",
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+        ),
+      ),
+    );
+  }
+
+  Future<bool?> _confirmDelete(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Delete Budget?"),
+        content: const Text("This will remove the spending limit for this category."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Delete")),
+        ],
+      ),
+    );
+  }
+
+  void _showAddBudgetDialog(BuildContext context) {
+    final categoryController = TextEditingController();
+    final amountController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("New Budget"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: categoryController,
+              decoration: const InputDecoration(labelText: "Category (e.g., Food)"),
             ),
-            ElevatedButton(
-              onPressed: () async {
-                final amount = double.tryParse(amountController.text.trim()) ?? 0;
-                await context.read<AppStateController>().createBudget(
-                  name: nameController.text.trim(),
-                  amount: amount,
-                  category: categoryController.text.trim(),
-                );
-                if (!context.mounted) return;
-                Navigator.pop(context);
-              },
-              child: const Text('Save'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: amountController,
+              decoration: const InputDecoration(labelText: "Monthly Limit (₦)"),
+              keyboardType: TextInputType.number,
             ),
           ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: _primaryGreen),
+            onPressed: () {
+              final amount = double.tryParse(amountController.text) ?? 0;
+              if (categoryController.text.isNotEmpty && amount > 0) {
+                _handleCreateBudget(categoryController.text.trim(), amount);
+              }
+            },
+            child: const Text("Save", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 }

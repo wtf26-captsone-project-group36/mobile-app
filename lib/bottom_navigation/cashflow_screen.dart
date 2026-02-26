@@ -201,16 +201,16 @@ class CashflowScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        Expanded(
+        /*Expanded(
           child: OutlinedButton.icon(
             onPressed: () => context.push('/cashflow/expenses'),
             icon: const Icon(Icons.receipt_long_outlined),
             label: const Text('Expenses'),
           ),
         ),
-      ],
+      */ ],
     );
-  }
+  } 
 
   Widget _buildRunwayCard(_CashflowTotals totals) {
     final bool positive = totals.net >= 0;
