@@ -59,6 +59,7 @@ dependencies:
   printing: ^5.14.2
   confetti: ^0.8.0
   http: ^1.2.2
+  dio: ^5.9.1
 
   
 
