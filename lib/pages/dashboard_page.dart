@@ -205,6 +205,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final cashflowValue = netBalance == null
         ? "NGN ${(inv.totalLedgerValue / 1000).toStringAsFixed(0)}k"
         : "NGN ${_formatCompactNgn(netBalance)}";
+    
+    // Extract Inventory Prediction (Value at Risk)
+    final invPrediction = appState.latestPredictions['inventory_prediction'];
+    final valueAtRisk = (invPrediction is Map<String, dynamic>)
+        ? (invPrediction['total_value_at_risk'] as num?)?.toDouble()
+        : null;
+
     final alertsCount = appState.criticalAlerts > 0
         ? appState.criticalAlerts
         : inv.criticalCount;
@@ -222,7 +229,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             // Real data pulled from InventoryProvider
             _statCard(
               "Inventory",
-              "${inv.items.length} Items",
+              (valueAtRisk != null && valueAtRisk > 0) 
+                  ? "Risk: ₦${_formatCompactNgn(valueAtRisk)}" 
+                  : "${inv.items.length} Items",
               Icons.inventory_2_outlined,
               Colors.blue,
               '/inventory',
