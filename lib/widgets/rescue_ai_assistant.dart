@@ -43,6 +43,7 @@ class _RescueAssistantSheet extends StatefulWidget {
 }
 
 class _RescueAssistantSheetState extends State<_RescueAssistantSheet> {
+  bool _isLoading = false;
   final TextEditingController _controller = TextEditingController();
   final List<_ChatMessage> _messages = [
     const _ChatMessage(
@@ -85,7 +86,7 @@ class _RescueAssistantSheetState extends State<_RescueAssistantSheet> {
               width: 42,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.2),
+                color: Colors.black.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(999),
               ),
             ),
@@ -98,11 +99,17 @@ class _RescueAssistantSheetState extends State<_RescueAssistantSheet> {
             _quickPromptRow(),
             const Divider(height: 16),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                itemCount: _messages.length,
-                itemBuilder: (_, index) =>
-                    _buildMessageBubble(_messages[index]),
+              child: ListView.separated(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                itemCount: _messages.length + (_isLoading ? 1 : 0),
+                itemBuilder: (_, index) {
+                  if (_isLoading && index == _messages.length) {
+                    return _buildLoadingBubble();
+                  }
+                  return _buildMessageBubble(_messages[index]);
+                },
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
               ),
             ),
             Padding(
@@ -119,12 +126,12 @@ class _RescueAssistantSheetState extends State<_RescueAssistantSheet> {
                         ),
                         isDense: true,
                       ),
-                      onSubmitted: (_) => _send(),
+                      onSubmitted: _isLoading ? null : (_) => _send(),
                     ),
                   ),
                   const SizedBox(width: 8),
                   IconButton.filled(
-                    onPressed: _send,
+                    onPressed: _isLoading ? null : _send,
                     icon: const Icon(Icons.send_rounded),
                     style: IconButton.styleFrom(
                       backgroundColor: const Color(0xFF006B4D),
@@ -156,7 +163,7 @@ class _RescueAssistantSheetState extends State<_RescueAssistantSheet> {
               label: Text(prompt),
               onPressed: () {
                 _controller.text = prompt;
-                _send();
+                if (!_isLoading) _send();
               },
             ),
           );
@@ -169,34 +176,30 @@ class _RescueAssistantSheetState extends State<_RescueAssistantSheet> {
     final isUser = message.role == _ChatRole.user;
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Row(
-          mainAxisAlignment: isUser
-              ? MainAxisAlignment.end
-              : MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            if (!isUser) _assistantAvatar(),
-            if (!isUser) const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              constraints: const BoxConstraints(maxWidth: 290),
-              decoration: BoxDecoration(
-                color: isUser
-                    ? const Color(0xFF006B4D)
-                    : Colors.black.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                message.text,
-                style: TextStyle(color: isUser ? Colors.white : Colors.black87),
-              ),
+      child: Row(
+        mainAxisAlignment:
+            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isUser) _assistantAvatar(),
+          if (!isUser) const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            constraints: const BoxConstraints(maxWidth: 290),
+            decoration: BoxDecoration(
+              color: isUser
+                  ? const Color(0xFF006B4D)
+                  : Colors.black.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
             ),
-            if (isUser) const SizedBox(width: 8),
-            if (isUser) _userAvatar(),
-          ],
-        ),
+            child: Text(
+              message.text,
+              style: TextStyle(color: isUser ? Colors.white : Colors.black87),
+            ),
+          ),
+          if (isUser) const SizedBox(width: 8),
+          if (isUser) _userAvatar(),
+        ],
       ),
     );
   }
@@ -207,7 +210,7 @@ class _RescueAssistantSheetState extends State<_RescueAssistantSheet> {
       height: 30,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+        border: Border.all(color: Colors.black.withOpacity(0.08)),
       ),
       child: ClipOval(
         child: Image.asset('assets/hervbypd.png', fit: BoxFit.cover),
@@ -221,7 +224,7 @@ class _RescueAssistantSheetState extends State<_RescueAssistantSheet> {
       builder: (_, avatarBytes, __) {
         return CircleAvatar(
           radius: 15,
-          backgroundColor: const Color(0xFF006B4D).withValues(alpha: 0.12),
+          backgroundColor: const Color(0xFF006B4D).withOpacity(0.12),
           backgroundImage: avatarBytes != null
               ? MemoryImage(avatarBytes)
               : null,
@@ -233,19 +236,53 @@ class _RescueAssistantSheetState extends State<_RescueAssistantSheet> {
     );
   }
 
-  void _send() {
+  Widget _buildLoadingBubble() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          _assistantAvatar(),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Text(
+              'Hervy is typing...',
+              style: TextStyle(
+                  color: Colors.black54, fontStyle: FontStyle.italic),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _send() async {
     final prompt = _controller.text.trim();
     if (prompt.isEmpty) return;
+
     _controller.clear();
     setState(() {
       _messages.add(_ChatMessage(role: _ChatRole.user, text: prompt));
+      _isLoading = true;
     });
 
+    // Simulate a small delay for a more natural "typing" feel
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // This part remains synchronous as per the architecture doc,
+    // but the UI is now non-blocking.
     final rescue = context.read<RescueProvider>();
     final inventory = context.read<InventoryProvider>();
     final response = rescue.answerAssistantQuery(prompt, inventory.items);
     setState(() {
       _messages.add(_ChatMessage(role: _ChatRole.assistant, text: response));
+      _isLoading = false;
     });
   }
 }
