@@ -10,6 +10,14 @@ import 'package:hervest_ai/features/rescue/services/rescue_suggestion_service.da
 import 'package:hervest_ai/models/inventory_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+const Map<String, String> _staticResponses = {
+  'purpose': 'HerVest AI, was built by a team of 17 hard-working ladies, belonging to Group 36 (aka SheBuildsTech) of the Women Techsters Fellowship Class of 2026, to helps businesses like yours reduce food waste by tracking inventory, suggesting rescue actions for near-expiry items, and giving you the opportunity to pledge to donate. Our goal is to turn potential losses into positive social and environmental impact! Zero to 360, we are on a mission to make a difference, wholistically.',
+  'about the app': 'HerVest AI helps businesses like yours reduce food waste by tracking inventory, suggesting rescue actions for near-expiry items, and connecting you with donation opportunities. Our goal is to turn potential losses into positive social and environmental impact!',
+  'zero hunger': "The 'Zero Hunger' goal is part of the UN's Sustainable Development Goals (SDG 2). It aims to end hunger, achieve food security, improve nutrition, and promote sustainable agriculture. By rescuing surplus food, you are directly contributing to this global effort!",
+  'reduce waste': 'Great question! Besides using this app, you can reduce waste by: \n1. Implementing a "First-In, First-Out" (FIFO) system for your stock. \n2. Repurposing ingredients (e.g., using vegetable scraps for broth). \n3. Offering discounts on items nearing their expiry date. \n4. Training staff on proper storage and handling.',
+  'sme fact': 'Small and Medium-sized Enterprises (SMEs) are the backbone of many economies! In Nigeria, for example, they account for about 96% of businesses and 84% of employment. Reducing operational costs, like those from food waste, is crucial for their sustainability and growth.',
+};
+
 class RescueProvider extends ChangeNotifier {
   static const String _actionsKey = 'rescue_actions_v1';
   static const String _badgeKey = 'rescue_badges_v1';
@@ -457,29 +465,33 @@ class RescueProvider extends ChangeNotifier {
 
   String answerAssistantQuery(String query, List<InventoryItem> items) {
     final q = query.toLowerCase().trim();
+
+    // 1. Check for general knowledge questions first.
+    for (final keyword in _staticResponses.keys) {
+      if (q.contains(keyword)) {
+        return _staticResponses[keyword]!;
+      }
+    }
+
+    // 2. If not a general question, fall back to existing data-driven logic.
     final currentSuggestions = RescueSuggestionService.buildSuggestions(items);
-    final critical = currentSuggestions
-        .where((entry) => entry.daysToExpiry <= 2)
-        .length;
+    final critical =
+        currentSuggestions.where((entry) => entry.daysToExpiry <= 2).length;
     final metrics = impactMetrics;
 
-    if (q.contains('what should i rescue today') ||
-        q.contains('rescue today')) {
+    if (q.contains('what should i rescue today') || q.contains('rescue today')) {
       if (currentSuggestions.isEmpty) {
         return 'No items are in Near-Expiry or Critical range today. Inventory looks stable.';
       }
-      final top = currentSuggestions
-          .take(3)
-          .map((entry) {
-            final path = RescueSuggestionService.pathLabel(
-              entry.recommendedPath,
-            );
-            final entity = RescueSuggestionService.entityLabel(
-              entry.bestEntityCategory,
-            );
-            return '${entry.itemName} (${entry.daysToExpiry}d): $path -> $entity';
-          })
-          .join(' | ');
+      final top = currentSuggestions.take(3).map((entry) {
+        final path = RescueSuggestionService.pathLabel(
+          entry.recommendedPath,
+        );
+        final entity = RescueSuggestionService.entityLabel(
+          entry.bestEntityCategory,
+        );
+        return '${entry.itemName} (${entry.daysToExpiry}d): $path -> $entity';
+      }).join(' | ');
       return 'Top rescue priorities: $top';
     }
 
@@ -499,13 +511,12 @@ class RescueProvider extends ChangeNotifier {
     }
 
     if (q.contains('sale') || q.contains('surplus')) {
-      final sales = currentSuggestions
-          .where((entry) => entry.recommendedPath == RescuePath.surplusSale)
-          .length;
+      final sales = currentSuggestions.where((entry) => entry.recommendedPath == RescuePath.surplusSale).length;
       return '$sales item(s) currently fit Surplus Sale based on value and time window.';
     }
 
-    return 'Ask about: "What should I rescue today?", "Any critical items?", "Show my impact", or "How close am I to my next badge?"';
+    // 3. Updated fallback response
+    return "I'm not sure how to answer that. You can ask me about rescue suggestions, your impact, or how to reduce waste.";
   }
 
   void _awardBadgesIfNeeded() {

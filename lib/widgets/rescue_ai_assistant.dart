@@ -48,8 +48,8 @@ class _RescueAssistantSheetState extends State<_RescueAssistantSheet> {
   final List<_ChatMessage> _messages = [
     const _ChatMessage(
       role: _ChatRole.assistant,
-      text:
-          'Hi, I\'m Hervy, your Rescue Assistant. Ask me about near-expiry items, rescue path, badges, or impact.',
+      text: 'Hi, I\'m Hervy! Ask me about rescue suggestions, your impact, or '
+          'general questions about reducing food waste.',
     ),
   ];
 
@@ -151,6 +151,7 @@ class _RescueAssistantSheetState extends State<_RescueAssistantSheet> {
       'What should I rescue today?',
       'Any critical items?',
       'Show my impact',
+      'How to reduce waste?',
     ];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
