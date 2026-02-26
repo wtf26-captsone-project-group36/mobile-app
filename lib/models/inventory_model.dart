@@ -11,6 +11,11 @@ class InventoryItem {
   double? purchasePrice;
   ItemStatus status;
   String? errorMessage;
+  
+  // Version tracking for conflict detection
+  int version;
+  DateTime? updatedAt;
+  DateTime? syncedAt;
 
   InventoryItem({
     required this.id,
@@ -23,5 +28,8 @@ class InventoryItem {
     this.purchasePrice,
     this.status = ItemStatus.normal,
     this.errorMessage,
+    this.version = 1,
+    this.updatedAt,
+    this.syncedAt,
   });
 }

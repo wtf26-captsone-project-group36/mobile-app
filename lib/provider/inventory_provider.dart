@@ -3,17 +3,68 @@ import 'package:hervest_ai/models/inventory_model.dart';
 import 'package:hervest_ai/mock_data/inventory_mock.dart'; 
 import 'package:hervest_ai/core/storage/app_session_store.dart';
 import 'package:hervest_ai/core/network/inventory_api_service.dart';
+import 'package:hervest_ai/features/rescue/data/rescue_local_db.dart';
 
 class InventoryProvider extends ChangeNotifier {
   final List<InventoryItem> _items = [];
   final int criticalThresholdDays = 3;
   final InventoryApiService _api = const InventoryApiService();
+  final RescueLocalDb _db = RescueLocalDb.instance;
+  
+  // Conflict tracking
+  Map<String, ConflictResolution> _pendingConflicts = {};
 
   List<InventoryItem> get items => _items;
+  Map<String, ConflictResolution> get pendingConflicts => _pendingConflicts;
 
   InventoryProvider() {
+    _initializeAsync();
+  }
+
+  void _initializeAsync() {
     _loadInitialData();
-    loadFromBackend();
+    _loadFromLocalCache(); // NEW: Load cached inventory first
+    loadFromBackend();     // Then sync with backend
+  }
+
+  /// Loads inventory from SQLite cache for offline access
+  Future<void> _loadFromLocalCache() async {
+    try {
+      final cached = await _db.loadInventoryCache();
+      if (cached.isEmpty) return;
+      
+      for (var row in cached) {
+        final item = InventoryItem(
+          id: (row['item_id'] ?? '').toString(),
+          name: (row['item_name'] ?? '').toString(),
+          category: (row['category'] ?? '').toString(),
+          quantity: (row['quantity'] as num?)?.toDouble() ?? 0.0,
+          unit: (row['unit'] ?? 'units').toString(),
+          expiryDate: row['expiry_date'] != null 
+            ? DateTime.tryParse(row['expiry_date'].toString())
+            : null,
+          purchasePrice: (row['purchase_price'] as num?)?.toDouble(),
+          version: (row['version'] as num?)?.toInt() ?? 1,
+          updatedAt: row['updated_at'] != null
+            ? DateTime.tryParse(row['updated_at'].toString())
+            : null,
+          syncedAt: row['synced_at'] != null
+            ? DateTime.tryParse(row['synced_at'].toString())
+            : null,
+        );
+        _validateItem(item);
+        
+        // Don't add if already in list (from mock data)
+        if (!_items.any((existing) => existing.id == item.id)) {
+          _items.add(item);
+        }
+      }
+      
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[InventoryProvider] Cache load failed: $e');
+      // Fail silently, continue with mock data
+    }
   }
 
   void _loadInitialData() {
@@ -51,6 +102,23 @@ class InventoryProvider extends ChangeNotifier {
     final index = _items.indexWhere((e) => e.id == itemId);
     if (index < 0) return;
 
+    // Check for conflicts before updating
+    final localVersion = _items[index].version;
+    final cachedVersion = await _db.getItemVersion(itemId);
+    
+    if (cachedVersion != null && cachedVersion > localVersion) {
+      // Conflict detected: item was edited on another device
+      final conflict = ConflictResolution(
+        itemId: itemId,
+        itemName: _items[index].name,
+        localVersion: localVersion,
+        remoteVersion: cachedVersion,
+      );
+      _pendingConflicts[itemId] = conflict;
+      notifyListeners();
+      return; // Wait for user to resolve
+    }
+
     final current = _items[index];
     final updated = InventoryItem(
       id: current.id,
@@ -61,22 +129,19 @@ class InventoryProvider extends ChangeNotifier {
       expiryDate: expiryDate ?? current.expiryDate,
       purchasePrice: purchasePrice ?? current.purchasePrice,
       dateReceived: current.dateReceived,
+      version: (current.version) + 1, // Increment version
+      updatedAt: DateTime.now(),
     );
     _validateItem(updated);
 
     final token = await AppSessionStore.instance.getAccessToken();
     if (token == null || token.isEmpty) {
-      // If offline/no-token, maybe allow local update or return? 
-      // For strict sync, we return.
       return;
     }
 
     // Optimistic Update
     _items[index] = updated;
     notifyListeners();
-
-    /* Back to optimist way: final token = await AppSessionStore.instance.getAccessToken();
-    if (token == null || token.isEmpty) return; */
 
     try {
       final apiUpdated = await _api.updateInventoryItem(
@@ -93,13 +158,18 @@ class InventoryProvider extends ChangeNotifier {
         },
       );
       if (apiUpdated.isNotEmpty) {
-        _items[index] = _fromApi(apiUpdated);
+        final parsed = _fromApi(apiUpdated);
+        _items[index] = parsed;
+        
+        // Save to cache with new version
+        await _db.updateItemVersion(itemId, parsed.version);
         notifyListeners();
       }
-    } catch (_) {
-      // Revert optimistic update on API error (e.g. Permission Denied)
+    } catch (e) {
+      // Revert optimistic update on API error
       _items[index] = current;
       notifyListeners();
+      debugPrint('[InventoryProvider] Update failed: $e');
     }
   }
 
@@ -158,9 +228,14 @@ class InventoryProvider extends ChangeNotifier {
       _items
         ..clear()
         ..addAll(rows.map(_fromApi));
+      
+      // Save to cache for offline access
+      await _db.saveInventoryCache(rows);
+      
       notifyListeners();
-    } catch (_) {
-      // Keep local fallback data if API load fails.
+    } catch (e) {
+      // Keep local fallback data (from cache or mock) if API load fails
+      debugPrint('[InventoryProvider] Backend load failed: $e');
     }
   }
 
@@ -209,9 +284,114 @@ class InventoryProvider extends ChangeNotifier {
       purchasePrice: purchasePrice,
     );
   }
+
+  /// Resolves a conflict by using server version (discard local changes)
+  Future<void> resolveConflictWithServerVersion(String itemId) async {
+    _pendingConflicts.remove(itemId);
+    
+    // Reload from cache (server version)
+    final cached = await _db.loadInventoryCache();
+    final serverItem = cached.firstWhere(
+      (item) => item['item_id'].toString() == itemId,
+      orElse: () => {},
+    );
+    
+    if (serverItem.isNotEmpty) {
+      final index = _items.indexWhere((e) => e.id == itemId);
+      if (index >= 0) {
+        final updated = InventoryItem(
+          id: (serverItem['item_id'] ?? '').toString(),
+          name: (serverItem['item_name'] ?? '').toString(),
+          category: (serverItem['category'] ?? '').toString(),
+          quantity: (serverItem['quantity'] as num?)?.toDouble() ?? 0.0,
+          unit: (serverItem['unit'] ?? 'units').toString(),
+          expiryDate: serverItem['expiry_date'] != null
+            ? DateTime.tryParse(serverItem['expiry_date'].toString())
+            : null,
+          purchasePrice: (serverItem['purchase_price'] as num?)?.toDouble(),
+          version: (serverItem['version'] as num?)?.toInt() ?? 1,
+          updatedAt: serverItem['updated_at'] != null
+            ? DateTime.tryParse(serverItem['updated_at'].toString())
+            : null,
+          syncedAt: serverItem['synced_at'] != null
+            ? DateTime.tryParse(serverItem['synced_at'].toString())
+            : null,
+        );
+        _validateItem(updated);
+        _items[index] = updated;
+        notifyListeners();
+      }
+    }
+  }
+
+  /// Resolves a conflict by keeping local changes (force update)
+  Future<void> resolveConflictForceLocal(String itemId) async {
+    _pendingConflicts.remove(itemId);
+    
+    final index = _items.indexWhere((e) => e.id == itemId);
+    if (index >= 0) {
+      final item = _items[index];
+      
+      // Retry the update with incremented version
+      final token = await AppSessionStore.instance.getAccessToken();
+      if (token == null || token.isEmpty) return;
+      
+      try {
+        await _api.updateInventoryItem(
+          accessToken: token,
+          itemId: itemId,
+          body: {
+            'item_name': item.name,
+            'category': item.category,
+            'quantity': item.quantity,
+            'unit': item.unit,
+            'expiry_date': item.expiryDate?.toIso8601String().split('T').first,
+            'purchase_price': item.purchasePrice,
+          },
+        );
+        
+        // Update cache with new version
+        item.version += 1;
+        item.updatedAt = DateTime.now();
+        item.syncedAt = DateTime.now();
+        await _db.updateItemVersion(itemId, item.version);
+        
+        notifyListeners();
+      } catch (e) {
+        debugPrint('[InventoryProvider] Force update failed: $e');
+      }
+    }
+  }
+
+  /// Clears old cache entries (default: older than 7 days)
+  Future<void> clearOldCache({Duration? olderThan}) async {
+    final threshold = olderThan ?? Duration(days: 7);
+    await _db.clearInventoryCacheOlderThan(threshold);
+  }
+
+  /// Gets conflict info for a specific item (for UI display)
+  ConflictResolution? getConflict(String itemId) => _pendingConflicts[itemId];
 }
 
+/// Represents a conflict where an item was edited on multiple devices
+class ConflictResolution {
+  final String itemId;
+  final String itemName;
+  final int localVersion;
+  final int remoteVersion;
+  final DateTime detectedAt;
 
+  ConflictResolution({
+    required this.itemId,
+    required this.itemName,
+    required this.localVersion,
+    required this.remoteVersion,
+  }) : detectedAt = DateTime.now();
+
+  String get conflictMessage =>
+      'Item "$itemName" was edited on another device. '
+      'Local version: $localVersion, Remote version: $remoteVersion';
+}
 
 /*import 'package:flutter/material.dart';
 import 'package:hervest_ai/models/inventory_model.dart';

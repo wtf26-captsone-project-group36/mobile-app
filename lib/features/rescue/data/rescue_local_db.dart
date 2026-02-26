@@ -8,11 +8,12 @@ class RescueLocalDb {
   static final RescueLocalDb instance = RescueLocalDb._();
 
   static const String _dbName = 'hervest_rescue.db';
-  static const int _dbVersion = 3;
+  static const int _dbVersion = 4;
 
   static const String rescueActionsTable = 'rescue_actions';
   static const String badgeEarningsTable = 'badge_earnings';
   static const String impactMetricsTable = 'impact_metrics';
+  static const String inventoryCacheTable = 'inventory_cache';
 
   Database? _db;
 
@@ -71,6 +72,22 @@ class RescueLocalDb {
             total_value_recovered REAL NOT NULL
           );
         ''');
+
+        await db.execute('''
+          CREATE TABLE $inventoryCacheTable (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            category TEXT NOT NULL,
+            quantity REAL NOT NULL,
+            unit TEXT NOT NULL,
+            expiry_date TEXT,
+            purchase_price REAL,
+            updated_at TEXT NOT NULL,
+            synced_at TEXT,
+            version INTEGER NOT NULL DEFAULT 1,
+            device_id TEXT
+          );
+        ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -87,6 +104,23 @@ class RescueLocalDb {
           await db.execute('''
             ALTER TABLE $rescueActionsTable
             ADD COLUMN backend_surplus_id TEXT;
+          ''');
+        }
+        if (oldVersion < 4) {
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS $inventoryCacheTable (
+              id TEXT PRIMARY KEY,
+              name TEXT NOT NULL,
+              category TEXT NOT NULL,
+              quantity REAL NOT NULL,
+              unit TEXT NOT NULL,
+              expiry_date TEXT,
+              purchase_price REAL,
+              updated_at TEXT NOT NULL,
+              synced_at TEXT,
+              version INTEGER NOT NULL DEFAULT 1,
+              device_id TEXT
+            );
           ''');
         }
       },
@@ -137,6 +171,109 @@ class RescueLocalDb {
       'total_value_recovered': metrics.totalValueRecovered,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
+
+  /// Saves inventory items to local cache with version tracking
+  Future<void> saveInventoryCache(List<Map<String, dynamic>> items) async {
+    final db = await database;
+    final now = DateTime.now().toIso8601String();
+    
+    await db.transaction((txn) async {
+      for (final item in items) {
+        await txn.insert(
+          inventoryCacheTable,
+          {
+            'id': item['item_id'] ?? item['id'] ?? '',
+            'name': item['item_name'] ?? item['name'] ?? '',
+            'category': item['category'] ?? '',
+            'quantity': (item['quantity'] as num?)?.toDouble() ?? 0.0,
+            'unit': item['unit'] ?? 'units',
+            'expiry_date': item['expiry_date']?.toString(),
+            'purchase_price': (item['purchase_price'] as num?)?.toDouble(),
+            'updated_at': now,
+            'synced_at': now,
+            'version': 1,
+            'device_id': 'app',
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  /// Loads inventory items from local cache
+  Future<List<Map<String, dynamic>>> loadInventoryCache() async {
+    final db = await database;
+    try {
+      final rows = await db.query(inventoryCacheTable);
+      return rows
+          .map((row) => {
+                'item_id': row['id'],
+                'item_name': row['name'],
+                'category': row['category'],
+                'quantity': row['quantity'],
+                'unit': row['unit'],
+                'expiry_date': row['expiry_date'],
+                'purchase_price': row['purchase_price'],
+                'version': row['version'] ?? 1,
+                'updated_at': row['updated_at'],
+                'synced_at': row['synced_at'],
+              })
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Gets the cached version of a specific item (for conflict detection)
+  Future<int?> getItemVersion(String itemId) async {
+    final db = await database;
+    try {
+      final rows = await db.query(
+        inventoryCacheTable,
+        where: 'id = ?',
+        whereArgs: [itemId],
+        limit: 1,
+      );
+      return rows.isNotEmpty ? rows.first['version'] as int? : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Updates the version and sync time for an item
+  Future<void> updateItemVersion(String itemId, int newVersion) async {
+    final db = await database;
+    try {
+      await db.update(
+        inventoryCacheTable,
+        {
+          'version': newVersion,
+          'synced_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        },
+        where: 'id = ?',
+        whereArgs: [itemId],
+      );
+    } catch (_) {
+      // Fail silently if cache update fails
+    }
+  }
+
+  /// Clears inventory cache older than the specified duration
+  Future<void> clearInventoryCacheOlderThan(Duration duration) async {
+    final db = await database;
+    final threshold = DateTime.now().subtract(duration).toIso8601String();
+    try {
+      await db.delete(
+        inventoryCacheTable,
+        where: 'synced_at < ?',
+        whereArgs: [threshold],
+      );
+    } catch (_) {
+      // Fail silently
+    }
+  }
+
 
   Map<String, dynamic> _actionToRow(RescueAction action) {
     return {
