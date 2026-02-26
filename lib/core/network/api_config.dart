@@ -11,7 +11,7 @@ class ApiConfig {
   /// The default value below is for the **Development/Test** environment.
   static const String _rawBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://18.175.213.46:3000',
+    defaultValue: 'http://18.175.213.46/',    //"http://18.175.213.46:3000/" for local dev"
   );
 
   static const String apiPrefix = '/api';
