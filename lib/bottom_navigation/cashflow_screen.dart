@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:hervest_ai/models/api_response_models.dart';
 import 'package:hervest_ai/provider/app_state_controller_mock.dart';
 
 class CashflowScreen extends StatelessWidget {
@@ -131,7 +132,7 @@ class CashflowScreen extends StatelessWidget {
   }
 
   // NEW: Anomaly Banner Widget
-  Widget _buildAnomalyBanner(BuildContext context, Map<String, dynamic> anomaly) {
+  Widget _buildAnomalyBanner(BuildContext context, Anomaly anomaly) {
     return Container(
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(12),
@@ -146,7 +147,7 @@ class CashflowScreen extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              anomaly['message'] ?? "Unusual spending detected",
+              anomaly.message,
               style: TextStyle(color: Colors.red.shade900, fontSize: 13, fontWeight: FontWeight.w500),
             ),
           ),

@@ -31,9 +31,9 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
               itemCount: state.auditLogs.length,
               itemBuilder: (context, index) {
                 final row = state.auditLogs[index];
-                final action = (row['action'] ?? 'action').toString();
-                final actor = (row['user_id'] ?? row['actor'] ?? 'unknown').toString();
-                final createdAt = (row['created_at'] ?? '').toString();
+                final action = row.action;
+                final actor = row.userId;
+                final createdAt = row.timestamp.toIso8601String();
                 return Card(
                   child: ListTile(
                     title: Text(action),

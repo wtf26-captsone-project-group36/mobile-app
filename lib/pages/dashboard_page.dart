@@ -316,10 +316,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (appState.alerts.isNotEmpty || appState.activities.isNotEmpty) {
       final tiles = <Widget>[];
       for (final alert in appState.alerts.take(5)) {
-        final id = (alert['id'] ?? '').toString();
-        final title = (alert['alert_type'] ?? 'Alert').toString();
-        final message = (alert['message'] ?? '').toString();
-        final isRead = alert['is_read'] == true;
+        final id = alert.id;
+        final title = alert.alertType;
+        final message = alert.message;
+        final isRead = alert.isRead;
 
         tiles.add(
           ListTile(
@@ -358,10 +358,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
 
       for (final activity in appState.activities.take(5)) {
-        final action = (activity['action'] ?? 'Activity').toString();
-        final entity = (activity['entity_type'] ?? '').toString();
-        final createdAt = (activity['created_at'] ?? '').toString();
-        final created = DateTime.tryParse(createdAt);
+        final action = activity.action;
+        final entity = activity.entityType;
+        final createdAt = activity.createdAt.toIso8601String();
+        final created = activity.createdAt;
 
         tiles.add(
           ListTile(

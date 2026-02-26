@@ -1,12 +1,13 @@
 import 'dart:convert';
 
 import 'package:hervest_ai/core/network/api_config.dart';
+import 'package:hervest_ai/models/api_response_models.dart';
 import 'package:http/http.dart' as http;
 
 class ExpenseApiService {
   const ExpenseApiService();
 
-  Future<List<Map<String, dynamic>>> getExpenses({
+  Future<List<Expense>> getExpenses({
     required String accessToken,
     String? status,
     String? category,
@@ -26,12 +27,12 @@ class ExpenseApiService {
     );
     final rows = response['expenses'];
     if (rows is List) {
-      return rows.whereType<Map>().map((e) => e.cast<String, dynamic>()).toList();
+      return rows.whereType<Map>().map((e) => Expense.fromJson(e.cast<String, dynamic>())).toList();
     }
     return [];
   }
 
-  Future<Map<String, dynamic>> getExpenseById({
+  Future<Expense?> getExpenseById({
     required String accessToken,
     required String id,
   }) async {
@@ -41,8 +42,8 @@ class ExpenseApiService {
       accessToken: accessToken,
     );
     final row = response['expense'];
-    if (row is Map) return row.cast<String, dynamic>();
-    return {};
+    if (row is Map) return Expense.fromJson(row.cast<String, dynamic>());
+    return null;
   }
 
   Future<Map<String, dynamic>> getExpenseSummary({
@@ -64,7 +65,7 @@ class ExpenseApiService {
     return {};
   }
 
-  Future<Map<String, dynamic>> submitExpense({
+  Future<Expense> submitExpense({
     required String accessToken,
     required Map<String, dynamic> body,
   }) async {
@@ -75,11 +76,15 @@ class ExpenseApiService {
       body: body,
     );
     final row = response['expense'];
-    if (row is Map) return row.cast<String, dynamic>();
-    return {};
+    if (row is Map) return Expense.fromJson(row.cast<String, dynamic>());
+    return Expense(
+      id: '', title: '', amount: 0, category: '', status: 'pending',
+      submittedAt: DateTime.now(), createdAt: DateTime.now(), 
+      submittedBy: ''
+    );
   }
 
-  Future<Map<String, dynamic>> reviewExpense({
+  Future<Expense?> reviewExpense({
     required String accessToken,
     required String id,
     required String decision,
@@ -95,11 +100,11 @@ class ExpenseApiService {
       },
     );
     final row = response['expense'];
-    if (row is Map) return row.cast<String, dynamic>();
-    return {};
+    if (row is Map) return Expense.fromJson(row.cast<String, dynamic>());
+    return null;
   }
 
-  Future<Map<String, dynamic>> cancelExpense({
+  Future<Expense?> cancelExpense({
     required String accessToken,
     required String id,
   }) async {
@@ -109,8 +114,8 @@ class ExpenseApiService {
       accessToken: accessToken,
     );
     final row = response['expense'];
-    if (row is Map) return row.cast<String, dynamic>();
-    return {};
+    if (row is Map) return Expense.fromJson(row.cast<String, dynamic>());
+    return null;
   }
 
   Future<Map<String, dynamic>> _request({

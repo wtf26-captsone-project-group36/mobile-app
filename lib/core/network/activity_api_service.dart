@@ -1,12 +1,13 @@
 import 'dart:convert';
 
 import 'package:hervest_ai/core/network/api_config.dart';
+import 'package:hervest_ai/models/api_response_models.dart';
 import 'package:http/http.dart' as http;
 
 class ActivityApiService {
   const ActivityApiService();
 
-  Future<List<Map<String, dynamic>>> getActivities({
+  Future<List<Activity>> getActivities({
     required String accessToken,
     int limit = 50,
     int offset = 0,
@@ -17,7 +18,10 @@ class ActivityApiService {
     );
     final rows = response['activities'];
     if (rows is List) {
-      return rows.whereType<Map>().map((e) => e.cast<String, dynamic>()).toList();
+      return rows
+          .whereType<Map>()
+          .map((e) => Activity.fromJson(e.cast<String, dynamic>()))
+          .toList();
     }
     return [];
   }

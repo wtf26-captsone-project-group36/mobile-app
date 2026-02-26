@@ -217,7 +217,14 @@ class CashflowOverviewPage extends StatelessWidget {
   }
 
   Map<String, double> _calculateTotals(AppStateController state) {
-    // Use report if available, otherwise calculate from transactions
+    // Use typed report if available, otherwise use legacy map
+    if (state.cashflowReportTyped != null) {
+      return {
+        'income': state.cashflowReportTyped!.totalIncome,
+        'expense': state.cashflowReportTyped!.totalExpense,
+        'net': state.cashflowReportTyped!.balance,
+      };
+    }
     if (state.cashflowReport.isNotEmpty) {
       return {
         'income': (state.cashflowReport['total_income'] as num?)?.toDouble() ?? 0.0,

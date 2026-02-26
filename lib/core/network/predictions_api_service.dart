@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:hervest_ai/core/network/api_config.dart';
+import 'package:hervest_ai/models/api_response_models.dart';
 import 'package:http/http.dart' as http;
 
 class PredictionsApiService {
@@ -9,16 +10,24 @@ class PredictionsApiService {
   Future<Map<String, dynamic>> getLatestPredictions({
     required String accessToken,
   }) async {
-    return _get('/predictions', accessToken: accessToken);
+    final response = await _get('/predictions', accessToken: accessToken);
+    return {
+      'cashflow_prediction': response['cashflow_prediction'] != null 
+          ? CashflowPrediction.fromJson(response['cashflow_prediction'])
+          : null,
+      'inventory_prediction': response['inventory_prediction'] != null
+          ? InventoryPrediction.fromJson(response['inventory_prediction'])
+          : null,
+    };
   }
 
-  Future<List<Map<String, dynamic>>> getAnomalies({
+  Future<List<Anomaly>> getAnomalies({
     required String accessToken,
   }) async {
     final response = await _get('/predictions/anomalies', accessToken: accessToken);
     final anomalies = response['anomalies'];
     if (anomalies is List) {
-      return anomalies.whereType<Map>().map((e) => e.cast<String, dynamic>()).toList();
+      return anomalies.whereType<Map>().map((e) => Anomaly.fromJson(e.cast<String, dynamic>())).toList();
     }
     return [];
   }

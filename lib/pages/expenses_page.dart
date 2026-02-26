@@ -51,10 +51,10 @@ class _ExpensesPageState extends State<ExpensesPage> {
               itemCount: state.expenses.length,
               itemBuilder: (context, index) {
                 final row = state.expenses[index];
-                final id = (row['id'] ?? row['expense_id'] ?? '').toString();
-                final title = (row['title'] ?? row['category'] ?? 'Expense').toString();
-                final amount = (row['amount'] ?? 0).toString();
-                final status = (row['status'] ?? 'pending').toString().toLowerCase();
+                final id = row.id;
+                final title = row.title ?? row.category;
+                final amount = row.amount.toString();
+                final status = (row.status ?? 'pending').toLowerCase();
                 return Card(
                   child: ListTile(
                     title: Text(title),

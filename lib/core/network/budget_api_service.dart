@@ -1,12 +1,13 @@
 import 'dart:convert';
 
 import 'package:hervest_ai/core/network/api_config.dart';
+import 'package:hervest_ai/models/api_response_models.dart';
 import 'package:http/http.dart' as http;
 
 class BudgetApiService {
   const BudgetApiService();
 
-  Future<List<Map<String, dynamic>>> getBudgets({
+  Future<List<Budget>> getBudgets({
     required String accessToken,
     bool? isActive,
     String? category,
@@ -22,12 +23,12 @@ class BudgetApiService {
     );
     final rows = response['budgets'];
     if (rows is List) {
-      return rows.whereType<Map>().map((e) => e.cast<String, dynamic>()).toList();
+      return rows.whereType<Map>().map((e) => Budget.fromJson(e.cast<String, dynamic>())).toList();
     }
     return [];
   }
 
-  Future<Map<String, dynamic>> getBudgetById({
+  Future<Budget?> getBudgetById({
     required String accessToken,
     required String id,
   }) async {
@@ -37,11 +38,11 @@ class BudgetApiService {
       accessToken: accessToken,
     );
     final row = response['budget'];
-    if (row is Map) return row.cast<String, dynamic>();
-    return {};
+    if (row is Map) return Budget.fromJson(row.cast<String, dynamic>());
+    return null;
   }
 
-  Future<Map<String, dynamic>> createBudget({
+  Future<Budget> createBudget({
     required String accessToken,
     required Map<String, dynamic> body,
   }) async {
@@ -52,11 +53,15 @@ class BudgetApiService {
       body: body,
     );
     final row = response['budget'];
-    if (row is Map) return row.cast<String, dynamic>();
-    return {};
+    if (row is Map) return Budget.fromJson(row.cast<String, dynamic>());
+    return Budget(
+      id: '', category: '', allocatedAmount: 0, spentAmount: 0,
+      remainingAmount: 0, period: 'monthly', isActive: true,
+      createdAt: DateTime.now(), updatedAt: DateTime.now()
+    );
   }
 
-  Future<Map<String, dynamic>> updateBudget({
+  Future<Budget?> updateBudget({
     required String accessToken,
     required String id,
     required Map<String, dynamic> body,
@@ -68,8 +73,8 @@ class BudgetApiService {
       body: body,
     );
     final row = response['budget'];
-    if (row is Map) return row.cast<String, dynamic>();
-    return {};
+    if (row is Map) return Budget.fromJson(row.cast<String, dynamic>());
+    return null;
   }
 
   Future<void> deleteBudget({

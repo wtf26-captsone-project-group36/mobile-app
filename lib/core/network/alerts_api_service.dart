@@ -1,29 +1,41 @@
 import 'dart:convert';
 
 import 'package:hervest_ai/core/network/api_config.dart';
+import 'package:hervest_ai/models/api_response_models.dart';
 import 'package:http/http.dart' as http;
 
 class AlertsApiService {
   const AlertsApiService();
 
-  Future<Map<String, dynamic>> getAlerts({
+  Future<List<Alert>> getAlerts({
     required String accessToken,
   }) async {
-    return _get('/alerts', accessToken: accessToken);
+    final response = await _get('/alerts', accessToken: accessToken);
+    final rows = response['alerts'];
+    if (rows is List) {
+      return rows.whereType<Map>().map((e) => Alert.fromJson(e.cast<String, dynamic>())).toList();
+    }
+    return [];
   }
 
-  Future<Map<String, dynamic>> markAlertRead({
+  Future<Alert?> markAlertRead({
     required String accessToken,
     required String alertId,
   }) async {
-    return _put('/alerts/$alertId/read', accessToken: accessToken);
+    final response = await _put('/alerts/$alertId/read', accessToken: accessToken);
+    final row = response['alert'];
+    if (row is Map) return Alert.fromJson(row.cast<String, dynamic>());
+    return null;
   }
 
-  Future<Map<String, dynamic>> resolveAlert({
+  Future<Alert?> resolveAlert({
     required String accessToken,
     required String alertId,
   }) async {
-    return _put('/alerts/$alertId/resolve', accessToken: accessToken);
+    final response = await _put('/alerts/$alertId/resolve', accessToken: accessToken);
+    final row = response['alert'];
+    if (row is Map) return Alert.fromJson(row.cast<String, dynamic>());
+    return null;
   }
 
   Future<Map<String, dynamic>> _get(

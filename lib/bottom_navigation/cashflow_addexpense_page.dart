@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import 'package:hervest_ai/core/network/budget_api_service.dart';
 import 'package:hervest_ai/core/network/expense_api_service.dart';
-import 'package:hervest_ai/widgets/app_input_styles.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
+import 'package:hervest_ai/models/api_response_models.dart';
+import 'package:hervest_ai/widgets/app_input_styles.dart';
 
 class AddExpensePage extends StatefulWidget {
   const AddExpensePage({super.key});
@@ -24,8 +24,8 @@ class _AddExpensePageState extends State<AddExpensePage> {
 
   // State
   bool _isSubmitting = false;
-  List<Map<String, dynamic>> _budgets = [];
-  Map<String, dynamic>? _selectedCategoryBudget;
+  List<Budget> _budgets = [];
+  Budget? _selectedCategoryBudget;
   final _amountController = TextEditingController();
   final _categoryController = TextEditingController();
   final _dateController = TextEditingController();
@@ -328,9 +328,9 @@ class _AddExpensePageState extends State<AddExpensePage> {
     } catch (e) {
       if (!mounted) return;
       String errorMessage = "Failed to save expense. Please try again.";
-      if (e.toString().contains("Expense exceeds remaining budget")) {
-        final remaining = _selectedCategoryBudget?['remaining_amount'] as num? ?? 0;
-        errorMessage = "You only have ₦${_formatAmount(remaining.toDouble())} left in your budget for this category.";
+      if (e.toString().contains("Expense exceeds remaining budget") && _selectedCategoryBudget != null) {
+        final remaining = _selectedCategoryBudget!.remainingAmount;
+        errorMessage = "You only have ₦${_formatAmount(remaining)} left in your budget for this category.";
       }
       showDialog(
         context: context,
@@ -347,9 +347,9 @@ class _AddExpensePageState extends State<AddExpensePage> {
     }
   }
 
-  Widget _buildBudgetIndicator(Map<String, dynamic> budget) {
-    final total = (budget['total_amount'] as num?)?.toDouble() ?? 0.0;
-    final remaining = (budget['remaining_amount'] as num?)?.toDouble() ?? 0.0;
+  Widget _buildBudgetIndicator(Budget budget) {
+    final total = budget.allocatedAmount;
+    final remaining = budget.remainingAmount;
     final percent = total > 0 ? remaining / total : 0.0;
 
     return Padding(
@@ -411,11 +411,21 @@ class _AddExpensePageState extends State<AddExpensePage> {
 
   void _onCategoryChanged(String categoryName) {
     final budget = _budgets.firstWhere(
-      (b) => (b['category'] as String).toLowerCase() == categoryName.trim().toLowerCase(),
-      orElse: () => {},
+      (b) => b.category.toLowerCase() == categoryName.trim().toLowerCase(),
+      orElse: () => Budget(
+        id: '',
+        category: '',
+        allocatedAmount: 0,
+        spentAmount: 0,
+        remainingAmount: 0,
+        period: 'monthly',
+        isActive: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
     );
     setState(() {
-      _selectedCategoryBudget = budget.isNotEmpty ? budget : null;
+      _selectedCategoryBudget = budget.id.isNotEmpty ? budget : null;
     });
   }
 }

@@ -7,6 +7,7 @@ import 'package:hervest_ai/core/storage/app_session_store.dart';
 import 'package:hervest_ai/core/network/cashflow_api_service.dart';
 import 'package:hervest_ai/core/network/expense_api_service.dart';
 import 'package:hervest_ai/core/network/predictions_api_service.dart';
+import 'package:hervest_ai/models/api_response_models.dart';
 
 class AppStateController extends ChangeNotifier {
   String userName = 'John Doe';
@@ -21,14 +22,17 @@ class AppStateController extends ChangeNotifier {
   final ExpenseApiService _expenseApi = const ExpenseApiService();
   final AuditApiService _auditApi = const AuditApiService();
   Map<String, dynamic> cashflowReport = {};
+  CashflowReport? cashflowReportTyped;
   Map<String, dynamic> latestPredictions = {};
+  CashflowPrediction? cashflowPredictionTyped;
+  InventoryPrediction? inventoryPredictionTyped;
   Map<String, dynamic> expenseSummary = {};
-  List<Map<String, dynamic>> anomalies = [];
-  List<Map<String, dynamic>> alerts = [];
-  List<Map<String, dynamic>> activities = [];
-  List<Map<String, dynamic>> budgets = [];
-  List<Map<String, dynamic>> expenses = [];
-  List<Map<String, dynamic>> auditLogs = [];
+  List<Anomaly> anomalies = [];
+  List<Alert> alerts = [];
+  List<Activity> activities = [];
+  List<Budget> budgets = [];
+  List<Expense> expenses = [];
+  List<AuditLog> auditLogs = [];
   int unreadAlerts = 0;
   int criticalAlerts = 0;
 
@@ -96,7 +100,7 @@ class AppStateController extends ChangeNotifier {
         },
       );
 
-      final mapped = _mapApiTransaction(created);
+      final mapped = _mapApiTransactionTyped(created);
       if (mapped.isNotEmpty) {
         transactions
           ..remove(tx)
@@ -115,12 +119,12 @@ class AppStateController extends ChangeNotifier {
     try {
       final rows = await _cashflowApi.getTransactions(accessToken: token);
       if (rows.isNotEmpty) {
-        transactions = rows.map(_mapApiTransaction).where((e) => e.isNotEmpty).toList();
+        transactions = rows.map(_mapApiTransactionTyped).where((e) => e.isNotEmpty).toList();
       }
       final report = await _cashflowApi.getCashflowReport(accessToken: token);
-      if (report.isNotEmpty) {
-        cashflowReport = report;
-      }
+      cashflowReportTyped = report;
+      // Keep legacy support
+      cashflowReport = report.toJson();
       notifyListeners();
     } catch (_) {
       // Keep local fallback data.
@@ -132,15 +136,11 @@ class AppStateController extends ChangeNotifier {
     if (token == null || token.isEmpty) return;
 
     try {
-      final alertsPayload = await _alertsApi.getAlerts(accessToken: token);
-      final alertsList = alertsPayload['alerts'];
-      if (alertsList is List) {
-        alerts = alertsList.whereType<Map>().map((e) => e.cast<String, dynamic>()).toList();
-        unreadAlerts = (alertsPayload['unread'] as num?)?.toInt() ?? 0;
-        criticalAlerts = alerts.where((row) {
-          final severity = (row['severity'] ?? '').toString().toLowerCase();
-          return severity == 'critical' || severity == 'high';
-        }).length;
+      final alertsData = await _alertsApi.getAlerts(accessToken: token);
+      if (alertsData.isNotEmpty) {
+        alerts = alertsData;
+        unreadAlerts = alerts.where((a) => a.isUnread).length;
+        criticalAlerts = alerts.where((a) => a.severity == 'critical' || a.severity == 'high').length;
       }
     } catch (_) {
       // Keep fallback counters.
@@ -150,6 +150,12 @@ class AppStateController extends ChangeNotifier {
       latestPredictions = await _predictionsApi.getLatestPredictions(
         accessToken: token,
       );
+      if (latestPredictions.containsKey('cashflow_prediction')) {
+        cashflowPredictionTyped = latestPredictions['cashflow_prediction'];
+      }
+      if (latestPredictions.containsKey('inventory_prediction')) {
+        inventoryPredictionTyped = latestPredictions['inventory_prediction'];
+      }
     } catch (_) {
       // Keep fallback values.
     }
@@ -161,7 +167,7 @@ class AppStateController extends ChangeNotifier {
     }
 
     try {
-      activities = await _activityApi.getActivities(accessToken: token, limit: 30);
+      activities = await _activityApi.getActivities(accessToken: token);
     } catch (_) {
       // Keep fallback values.
     }
@@ -388,17 +394,12 @@ class AppStateController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Map<String, dynamic> _mapApiTransaction(Map<String, dynamic> row) {
-    final type = (row['type'] ?? '').toString().toLowerCase();
-    final amountNum = (row['amount'] as num?)?.toDouble() ?? 0.0;
-    final category = (row['category'] ?? row['title'] ?? 'Transaction').toString();
-    final dateRaw = (row['date'] ?? row['transaction_date'] ?? row['created_at']).toString();
-
+  Map<String, dynamic> _mapApiTransactionTyped(Transaction tx) {
     return {
-      'title': category,
-      'amount': 'NGN ${_formatAmount(amountNum)}',
-      'type': type == 'income' ? 'Income' : 'Expense',
-      'date': _formatDateForUi(dateRaw),
+      'title': tx.category,
+      'amount': 'NGN ${_formatAmount(tx.amount)}',
+      'type': tx.type == 'income' ? 'Income' : 'Expense',
+      'date': _formatDateForUi(tx.date.toIso8601String()),
     };
   }
 

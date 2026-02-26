@@ -1,25 +1,23 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:hervest_ai/core/network/api_config.dart';
+import 'package:hervest_ai/models/api_response_models.dart';
 
 class CashflowApiService {
   const CashflowApiService();
 
-  Future<List<Map<String, dynamic>>> getTransactions({
+  Future<List<Transaction>> getTransactions({
     required String accessToken,
   }) async {
     final response = await _get('/transactions', accessToken: accessToken);
     final transactions = response['transactions'];
     if (transactions is List) {
-      return transactions
-          .whereType<Map>()
-          .map((e) => e.cast<String, dynamic>())
-          .toList();
+      return transactions.whereType<Map>().map((e) => Transaction.fromJson(e.cast<String, dynamic>())).toList();
     }
     return [];
   }
 
-  Future<Map<String, dynamic>> createTransaction({
+  Future<Transaction> createTransaction({
     required String accessToken,
     required Map<String, dynamic> body,
   }) async {
@@ -29,17 +27,24 @@ class CashflowApiService {
       body: body,
     );
     final transaction = response['transaction'];
-    if (transaction is Map) return transaction.cast<String, dynamic>();
-    return {};
+    if (transaction is Map) return Transaction.fromJson(transaction.cast<String, dynamic>());
+    return Transaction(
+      id: '', type: 'expense', amount: 0, category: '',
+      date: DateTime.now(), createdAt: DateTime.now()
+    );
   }
 
-  Future<Map<String, dynamic>> getCashflowReport({
+  Future<CashflowReport> getCashflowReport({
     required String accessToken,
   }) async {
     final response = await _get('/transactions/report', accessToken: accessToken);
     final report = response['report'];
-    if (report is Map) return report.cast<String, dynamic>();
-    return {};
+    if (report is Map) return CashflowReport.fromJson(report.cast<String, dynamic>());
+    return CashflowReport(
+      totalIncome: 0, totalExpense: 0, balance: 0,
+      cashRunwayDays: 0, averageDailyBurn: 0, period: 'current_month',
+      transactionsCount: 0
+    );
   }
 
   Future<Map<String, dynamic>> _get(

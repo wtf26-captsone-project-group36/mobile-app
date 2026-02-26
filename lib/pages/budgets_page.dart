@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hervest_ai/core/network/budget_api_service.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
+import 'package:hervest_ai/models/api_response_models.dart';
 import 'package:intl/intl.dart';
 
 class BudgetsPage extends StatefulWidget {
@@ -17,7 +18,7 @@ class _BudgetsPageState extends State<BudgetsPage> {
   final Color _bgCream = const Color(0xFFFDFBF7);
 
   bool _isLoading = true;
-  List<Map<String, dynamic>> _budgets = [];
+  List<Budget> _budgets = [];
 
   @override
   void initState() {
@@ -152,19 +153,19 @@ class _BudgetsPageState extends State<BudgetsPage> {
     );
   }
 
-  Widget _buildBudgetCard(Map<String, dynamic> budget) {
-    final category = budget['category'] ?? 'Unknown';
-    final total = (budget['total_amount'] as num?)?.toDouble() ?? 0.0;
-    final remaining = (budget['remaining_amount'] as num?)?.toDouble() ?? 0.0;
-    final spent = total - remaining;
+  Widget _buildBudgetCard(Budget budget) {
+    final category = budget.category;
+    final total = budget.allocatedAmount;
+    final remaining = budget.remainingAmount;
+    final spent = budget.spentAmount;
     final progress = total > 0 ? spent / total : 0.0;
     final isCritical = progress > 0.9;
 
     return Dismissible(
-      key: Key(budget['id'].toString()),
+      key: Key(budget.id),
       direction: DismissDirection.endToStart,
       confirmDismiss: (_) async => await _confirmDelete(context),
-      onDismissed: (_) => _deleteBudget(budget['id'].toString()),
+      onDismissed: (_) => _deleteBudget(budget.id),
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),

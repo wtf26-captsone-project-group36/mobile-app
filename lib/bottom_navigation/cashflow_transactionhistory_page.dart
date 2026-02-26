@@ -52,7 +52,7 @@ class TransactionHistoryPage extends StatelessWidget {
                 final items = entry.value;
                 return [
                   _buildDateSection(date),
-                  ...items.map(_buildTransactionItem).toList(),
+                  ...items.map(_buildTransactionItem),
                   const SizedBox(height: 12),
                 ];
               }).toList(),
