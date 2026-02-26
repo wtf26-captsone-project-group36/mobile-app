@@ -60,6 +60,13 @@ class RescueProvider extends ChangeNotifier {
   final ActivityApiService _activityApi = const ActivityApiService();
   List<Map<String, dynamic>> _marketplaceSurplus = const [];
   List<Map<String, dynamic>> _mySurplus = const [];
+  ImpactMetrics _impactMetrics = const ImpactMetrics(
+    totalCompletedRescues: 0,
+    totalDonations: 0,
+    totalSurplusSales: 0,
+    totalCo2AvoidedKg: 0,
+    totalValueRecovered: 0,
+  );
 
   List<RescueSuggestion> get suggestions => _suggestions;
   List<RescueAction> get actions => _actions;
@@ -70,39 +77,14 @@ class RescueProvider extends ChangeNotifier {
   bool get isReady => _isReady;
   bool get assistantOpenRequested => _assistantOpenRequested;
 
-  ImpactMetrics get impactMetrics {
-    final completed = _actions.where((action) => action.isCompleted).toList();
-    final donations = completed
-        .where((action) => action.finalPath == RescuePath.donation)
-        .toList();
-    final surplusSales = completed
-        .where((action) => action.finalPath == RescuePath.surplusSale)
-        .toList();
-
-    final co2 = completed.fold<double>(
-      0,
-      (sum, action) => sum + (action.quantity * action.co2FactorPerUnit),
-    );
-    final value = completed.fold<double>(
-      0,
-      (sum, action) => sum + action.estimatedValue,
-    );
-
-    return ImpactMetrics(
-      totalCompletedRescues: completed.length,
-      totalDonations: donations.length,
-      totalSurplusSales: surplusSales.length,
-      totalCo2AvoidedKg: co2,
-      totalValueRecovered: value,
-    );
-  }
+  ImpactMetrics get impactMetrics => _impactMetrics;
 
   int get nextBadgeThreshold {
     final donations = impactMetrics.totalDonations;
     for (final badge in donationBadges) {
       if (donations < badge.threshold) return badge.threshold;
     }
-    return donationBadges.last.threshold;
+    return ((donations ~/ 50) + 1) * 50;
   }
 
   Future<void> initialize() async {
@@ -122,6 +104,7 @@ class RescueProvider extends ChangeNotifier {
         await _loadFromPrefs();
       }
     }
+    _recalculateImpactMetrics();
     _isReady = true;
     await loadMarketplaceSurplus();
     notifyListeners();
@@ -193,6 +176,7 @@ class RescueProvider extends ChangeNotifier {
           .map((entry) => entry.id == latest.id ? action : entry)
           .toList();
     }
+    _recalculateImpactMetrics();
     _awardCommitmentBadgeIfNeeded();
     await _persist();
     await _syncPledgeToBackend(action);
@@ -220,6 +204,7 @@ class RescueProvider extends ChangeNotifier {
     _actions = _actions
         .map((entry) => entry.id == latest.id ? completed : entry)
         .toList();
+    _recalculateImpactMetrics();
     _awardBadgesIfNeeded();
     await _persist();
     await _syncCompletionToBackend(completed);
@@ -237,6 +222,7 @@ class RescueProvider extends ChangeNotifier {
     _actions = _actions
         .map((entry) => entry.id == latest.id ? deferred : entry)
         .toList();
+    _recalculateImpactMetrics();
     await _persist();
     await _logActivityToBackend(
       action: 'rescue.deferred',
@@ -517,6 +503,33 @@ class RescueProvider extends ChangeNotifier {
 
     // 3. Updated fallback response
     return "I'm not sure how to answer that. You can ask me about rescue suggestions, your impact, or how to reduce waste.";
+  }
+
+  void _recalculateImpactMetrics() {
+    final completed = _actions.where((action) => action.isCompleted).toList();
+    final donations = completed
+        .where((action) => action.finalPath == RescuePath.donation)
+        .toList();
+    final surplusSales = completed
+        .where((action) => action.finalPath == RescuePath.surplusSale)
+        .toList();
+
+    final co2 = completed.fold<double>(
+      0,
+      (sum, action) => sum + (action.quantity * action.co2FactorPerUnit),
+    );
+    final value = completed.fold<double>(
+      0,
+      (sum, action) => sum + action.estimatedValue,
+    );
+
+    _impactMetrics = ImpactMetrics(
+      totalCompletedRescues: completed.length,
+      totalDonations: donations.length,
+      totalSurplusSales: surplusSales.length,
+      totalCo2AvoidedKg: co2,
+      totalValueRecovered: value,
+    );
   }
 
   void _awardBadgesIfNeeded() {
