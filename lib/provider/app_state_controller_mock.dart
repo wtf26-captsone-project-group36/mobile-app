@@ -39,6 +39,7 @@ class AppStateController extends ChangeNotifier {
   AppStateController() {
     _initializeUserName();
     loadTransactionsFromBackend();
+    loadCashflowReport();
     loadInsightsFromBackend();
   }
 
@@ -119,8 +120,19 @@ class AppStateController extends ChangeNotifier {
     try {
       final rows = await _cashflowApi.getTransactions(accessToken: token);
       if (rows.isNotEmpty) {
-        transactions = rows.map(_mapApiTransactionTyped).where((e) => e.isNotEmpty).toList();
+        transactions =
+            rows.map(_mapApiTransactionTyped).where((e) => e.isNotEmpty).toList();
       }
+      notifyListeners();
+    } catch (_) {
+      // Keep local fallback data.
+    }
+  }
+
+  Future<void> loadCashflowReport() async {
+    final token = await AppSessionStore.instance.getAccessToken();
+    if (token == null || token.isEmpty) return;
+    try {
       final report = await _cashflowApi.getCashflowReport(accessToken: token);
       cashflowReportTyped = report;
       // Keep legacy support

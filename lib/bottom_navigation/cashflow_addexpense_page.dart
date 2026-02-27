@@ -323,8 +323,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
     try {
       await _expenseService.submitExpense(accessToken: token, body: body);
       if (!mounted) return;
-      context.pop();
-      context.pop(true); // Return true to signal success
+      context.pop(true); // Return true to signal success to the previous screen
     } catch (e) {
       if (!mounted) return;
       String errorMessage = "Failed to save expense. Please try again.";

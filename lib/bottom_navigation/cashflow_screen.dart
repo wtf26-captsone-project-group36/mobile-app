@@ -1,50 +1,86 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:hervest_ai/models/api_response_models.dart';
 import 'package:hervest_ai/provider/app_state_controller_mock.dart';
 
-class CashflowScreen extends StatelessWidget {
+class CashflowScreen extends StatefulWidget {
   const CashflowScreen({super.key});
 
+  @override
+  State<CashflowScreen> createState() => _CashflowScreenState();
+}
+
+class _CashflowScreenState extends State<CashflowScreen> {
   final Color primaryGreen = const Color(0xFF006B4D);
   final Color bgCream = const Color(0xFFFDFBF7);
+  DateTime _lastUpdated = DateTime.now();
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // The provider loads data on init, but we want to ensure it's fresh
+    // and establish a baseline for the "last updated" timestamp.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshData());
+  }
+
+  Future<void> _refreshData() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+    try {
+      // As per architecture, this fetches the report which contains the balance.
+      await context.read<AppStateController>().loadCashflowReport();
+      await context.read<AppStateController>().loadTransactionsFromBackend();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _lastUpdated = DateTime.now();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final double width = MediaQuery.of(context).size.width;
-
     return Scaffold(
       backgroundColor: bgCream,
       body: SafeArea(
         child: Consumer<AppStateController>(
           builder: (context, state, child) {
             final totals = _totalsFromState(state);
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  _buildHeader(),
-                  // NEW: Show anomaly alert if present
-                  if (state.anomalies.isNotEmpty)
-                    _buildAnomalyBanner(context, state.anomalies.first),
-                  
-                  const SizedBox(height: 24),
-                  _buildBalanceCard(width, totals.net),
-                  const SizedBox(height: 20),
-                  _buildRunwayCard(totals),
-                  const SizedBox(height: 20),
-                  _buildActionButtons(context),
-                  const SizedBox(height: 16),
-                  _buildFinanceTools(context),
-                  const SizedBox(height: 32),
-                  _buildAiInsightsLink(context), // NEW: Link to full insights
-                  const SizedBox(height: 18),
-                  _buildRecentTransactionsHeader(context),
-                  _buildTransactionList(state.transactions),
-                ],
+            return RefreshIndicator(
+              onRefresh: _refreshData,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 20),
+                    _buildHeader(),
+                    // NEW: Show anomaly alert if present
+                    if (state.anomalies.isNotEmpty)
+                      _buildAnomalyBanner(context, state.anomalies.first),
+
+                    const SizedBox(height: 24),
+                    _buildBalanceCard(width, totals.net),
+                    const SizedBox(height: 20),
+                    _buildRunwayCard(totals),
+                    const SizedBox(height: 20),
+                    _buildActionButtons(context),
+                    const SizedBox(height: 16),
+                    _buildFinanceTools(context),
+                    const SizedBox(height: 32),
+                    _buildAiInsightsLink(context), // NEW: Link to full insights
+                    const SizedBox(height: 18),
+                    _buildRecentTransactionsHeader(context),
+                    _buildTransactionList(state.transactions),
+                  ],
+                ),
               ),
             );
           },
@@ -64,7 +100,10 @@ class CashflowScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Updated today", style: TextStyle(color: Colors.white70, fontSize: 12)),
+          Text(
+            "Updated ${DateFormat('MMM d, h:mm a').format(_lastUpdated)}",
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
           const SizedBox(height: 8),
           Text(
             "₦ ${_formatAmount(netBalance)}",
@@ -86,7 +125,7 @@ class CashflowScreen extends StatelessWidget {
             icon: Icons.add,
             color: const Color(0xFFE0F2F1),
             textColor: primaryGreen,
-            onTap: () => context.push('/cashflow/add-income'),
+            onTap: _navigateToAddIncome,
           ),
         ),
         const SizedBox(width: 12),
@@ -96,11 +135,25 @@ class CashflowScreen extends StatelessWidget {
             icon: Icons.remove,
             color: const Color(0xFFFFEBEE),
             textColor: Colors.red,
-            onTap: () => context.push('/cashflow/add-expense'),
+            onTap: _navigateToAddExpense,
           ),
         ),
       ],
     );
+  }
+
+  void _navigateToAddIncome() async {
+    final result = await context.push<bool>('/cashflow/add-income');
+    if (result == true && mounted) {
+      _refreshData();
+    }
+  }
+
+  void _navigateToAddExpense() async {
+    final result = await context.push<bool>('/cashflow/add-expense');
+    if (result == true && mounted) {
+      _refreshData();
+    }
   }
 
   Widget _actionButton({
