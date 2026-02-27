@@ -35,6 +35,9 @@ class AppStateController extends ChangeNotifier {
   List<AuditLog> auditLogs = [];
   int unreadAlerts = 0;
   int criticalAlerts = 0;
+  bool _isLoadingInsights = true;
+
+  bool get isLoadingInsights => _isLoadingInsights;
 
   AppStateController() {
     _initializeUserName();
@@ -145,43 +148,54 @@ class AppStateController extends ChangeNotifier {
 
   Future<void> loadInsightsFromBackend() async {
     final token = await AppSessionStore.instance.getAccessToken();
-    if (token == null || token.isEmpty) return;
+    if (token == null || token.isEmpty) {
+      _isLoadingInsights = false;
+      notifyListeners();
+      return;
+    }
 
     try {
-      final alertsData = await _alertsApi.getAlerts(accessToken: token);
-      if (alertsData.isNotEmpty) {
-        alerts = alertsData;
-        unreadAlerts = alerts.where((a) => a.isUnread).length;
-        criticalAlerts = alerts.where((a) => a.severity == 'critical' || a.severity == 'high').length;
+      try {
+        final alertsData = await _alertsApi.getAlerts(accessToken: token);
+        if (alertsData.isNotEmpty) {
+          alerts = alertsData;
+          unreadAlerts = alerts.where((a) => a.isUnread).length;
+          criticalAlerts = alerts
+              .where((a) => a.severity == 'critical' || a.severity == 'high')
+              .length;
+        }
+      } catch (_) {
+        // Keep fallback counters.
       }
-    } catch (_) {
-      // Keep fallback counters.
-    }
 
-    try {
-      final predictions = await _predictionsApi.getLatestPredictions(
-        accessToken: token,
-      );
-      cashflowPrediction = predictions['cashflow_prediction'] as CashflowPrediction?;
-      inventoryPrediction = predictions['inventory_prediction'] as InventoryPrediction?;
-      latestPredictions = predictions; // Keep for any legacy consumers
-    } catch (_) {
-      // Keep fallback values.
-    }
+      try {
+        final predictions = await _predictionsApi.getLatestPredictions(
+          accessToken: token,
+        );
+        cashflowPrediction =
+            predictions['cashflow_prediction'] as CashflowPrediction?;
+        inventoryPrediction =
+            predictions['inventory_prediction'] as InventoryPrediction?;
+        latestPredictions = predictions; // Keep for any legacy consumers
+      } catch (_) {
+        // Keep fallback values.
+      }
 
-    try {
-      anomalies = await _predictionsApi.getAnomalies(accessToken: token);
-    } catch (_) {
-      // Keep fallback values.
-    }
+      try {
+        anomalies = await _predictionsApi.getAnomalies(accessToken: token);
+      } catch (_) {
+        // Keep fallback values.
+      }
 
-    try {
-      activities = await _activityApi.getActivities(accessToken: token);
-    } catch (_) {
-      // Keep fallback values.
+      try {
+        activities = await _activityApi.getActivities(accessToken: token);
+      } catch (_) {
+        // Keep fallback values.
+      }
+    } finally {
+      _isLoadingInsights = false;
+      notifyListeners();
     }
-
-    notifyListeners();
   }
 
   Future<void> markAlertRead(String alertId) async {

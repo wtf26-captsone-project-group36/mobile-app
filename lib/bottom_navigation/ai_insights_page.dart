@@ -28,33 +28,54 @@ class AiInsightsPage extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Real-time risk assessment based on your business data.",
-              style: TextStyle(color: Colors.black54),
+      body: state.isLoadingInsights
+          ? Center(child: CircularProgressIndicator(color: _primaryGreen))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Real-time risk assessment based on your business data.",
+                    style: TextStyle(color: Colors.black54),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSectionTitle("Cashflow Forecast"),
+                  _buildCashflowCard(cashflowPred),
+                  const SizedBox(height: 24),
+                  _buildSectionTitle("Inventory Health"),
+                  _buildInventoryCard(inventoryPred),
+                  const SizedBox(height: 24),
+                  if (state.anomalies.isNotEmpty) ...[
+                    _buildSectionTitle("Detected Anomalies"),
+                    ...state.anomalies.map(_buildAnomalyTile),
+                  ] else if (cashflowPred == null && inventoryPred == null)
+                    _buildErrorCard(),
+                ],
+              ),
             ),
-            const SizedBox(height: 24),
-            
-            _buildSectionTitle("Cashflow Forecast"),
-            _buildCashflowCard(cashflowPred),
-            
-            const SizedBox(height: 24),
-            
-            _buildSectionTitle("Inventory Health"),
-            _buildInventoryCard(inventoryPred),
+    );
+  }
 
-            const SizedBox(height: 24),
-            
-            if (state.anomalies.isNotEmpty) ...[
-              _buildSectionTitle("Detected Anomalies"),
-              ...state.anomalies.map(_buildAnomalyTile),
-            ],
-          ],
-        ),
+  Widget _buildErrorCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.orange.shade100),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.cloud_off_outlined, color: Colors.orange),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              "Could not load AI insights. Please check your internet connection and try again later.",
+              style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
       ),
     );
   }
