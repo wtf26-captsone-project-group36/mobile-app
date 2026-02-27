@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:hervest_ai/provider/app_state_controller_mock.dart';
 import 'package:hervest_ai/widgets/app_input_styles.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class AddIncomePage extends StatefulWidget {
   const AddIncomePage({super.key});
@@ -17,10 +19,21 @@ class _AddIncomePageState extends State<AddIncomePage> {
   final Color bgCream = const Color(0xFFFDFBF7);
 
   final _amountController = TextEditingController();
-  final _sourceController = TextEditingController();
+  final _categoryController = TextEditingController();
   final _dateController = TextEditingController();
   final _descriptionController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
+  final ImagePicker _imagePicker = ImagePicker();
+  XFile? _pickedFile;
+
+  final List<String> _incomeCategories = [
+    'Sales',
+    'Services',
+    'Investments',
+    'Grants',
+    'Refunds',
+    'Other'
+  ];
 
   @override
   void initState() {
@@ -31,7 +44,7 @@ class _AddIncomePageState extends State<AddIncomePage> {
   @override
   void dispose() {
     _amountController.dispose();
-    _sourceController.dispose();
+    _categoryController.dispose();
     _dateController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -100,12 +113,8 @@ class _AddIncomePageState extends State<AddIncomePage> {
               ),
 
               const SizedBox(height: 20),
-              _buildLabel("Source"),
-              _buildTextField(
-                controller: _sourceController,
-                hint: "What was this income from?",
-                helper: "e.g., Direct Sales, Refund, Grant",
-              ),
+              _buildLabel("Category"),
+              _buildCategoryDropdown(),
 
               const SizedBox(height: 20),
               _buildLabel("Description (Optional)"),
@@ -116,7 +125,11 @@ class _AddIncomePageState extends State<AddIncomePage> {
                 maxLines: 3,
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
+
+              _buildFileUploadSection(),
+
+              const SizedBox(height: 32),
 
               _buildSaveButton(context),
               const SizedBox(height: 20),
@@ -209,6 +222,64 @@ class _AddIncomePageState extends State<AddIncomePage> {
     );
   }
 
+  Widget _buildCategoryDropdown() {
+    return DropdownButtonFormField<String>(
+      decoration: AppInputStyles.decoration(hintText: "Select category"),
+      items: _incomeCategories.map((String category) {
+        return DropdownMenuItem<String>(
+          value: category,
+          child: Text(category),
+        );
+      }).toList(),
+      onChanged: (String? newValue) {
+        if (newValue != null) {
+          _categoryController.text = newValue;
+        }
+      },
+    );
+  }
+
+  Widget _buildFileUploadSection() {
+    if (_pickedFile != null) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.attach_file, color: Colors.black54, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                _pickedFile!.name,
+                style: const TextStyle(fontSize: 13),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, size: 18),
+              onPressed: () => setState(() => _pickedFile = null),
+            )
+          ],
+        ),
+      );
+    }
+    return OutlinedButton.icon(
+      onPressed: _pickFile,
+      icon: Icon(Icons.cloud_upload_outlined, color: primaryGreen, size: 20),
+      label: const Text("Upload receipt (optional)",
+          style: TextStyle(color: Colors.black87)),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        side: BorderSide(color: primaryGreen.withOpacity(0.2)),
+        backgroundColor: primaryGreen.withOpacity(0.05),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
   Widget _buildSaveButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
@@ -228,8 +299,8 @@ class _AddIncomePageState extends State<AddIncomePage> {
             );
             return;
           }
-          final title = _sourceController.text.trim().isNotEmpty
-              ? _sourceController.text.trim()
+          final title = _categoryController.text.trim().isNotEmpty
+              ? _categoryController.text.trim()
               : "Income";
           final date = _dateController.text.trim().isNotEmpty
               ? _dateController.text.trim()
@@ -242,7 +313,11 @@ class _AddIncomePageState extends State<AddIncomePage> {
             note: _descriptionController.text.trim(),
           );
           if (!context.mounted) return;
-          context.pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text("Income saved successfully!"), backgroundColor: Colors.green),
+          );
+          context.pop(true);
         },
         child: const Text(
           "Save income",
@@ -269,6 +344,24 @@ class _AddIncomePageState extends State<AddIncomePage> {
       _selectedDate = picked;
       _dateController.text = _formatDisplayDate(picked);
     });
+  }
+
+  Future<void> _pickFile() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (image == null) return;
+      setState(() {
+        _pickedFile = image;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not pick file: $e')),
+      );
+    }
   }
 
   String _formatDisplayDate(DateTime date) {
