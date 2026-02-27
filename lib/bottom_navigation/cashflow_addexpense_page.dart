@@ -377,18 +377,22 @@ class _AddExpensePageState extends State<AddExpensePage> {
       context.pop(true); // Return true to signal success to the previous screen
     } catch (e) {
       if (!mounted) return;
-      String errorMessage = "Failed to save expense. Please try again.";
+      String errorTitle = "Error";
+      String errorMessage;
+
       if (e.toString().contains("Expense exceeds remaining budget") && _selectedCategoryBudget != null) {
+        errorTitle = "Budget Exceeded";
         final remaining = _selectedCategoryBudget!.remainingAmount;
         errorMessage = "You only have ₦${_formatAmount(remaining)} left in your budget for this category.";
+      } else {
+        // Generic error for other cases. In a real app, you might log 'e' for debugging.
+        errorMessage = "Could not save the expense. Please check your connection and try again.";
       }
       showDialog(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(e.toString().contains("exceeds") ? "Budget Exceeded" : "Error"),
-          content: Text(errorMessage),
-          actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("OK"))],
-        ),
+        builder: (ctx) => AlertDialog(title: Text(errorTitle), content: Text(errorMessage), actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("OK"))
+        ]),
       );
     } finally {
       if (mounted) {
