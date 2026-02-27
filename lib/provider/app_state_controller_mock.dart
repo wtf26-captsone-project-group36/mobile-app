@@ -24,8 +24,8 @@ class AppStateController extends ChangeNotifier {
   Map<String, dynamic> cashflowReport = {};
   CashflowReport? cashflowReportTyped;
   Map<String, dynamic> latestPredictions = {};
-  CashflowPrediction? cashflowPredictionTyped;
-  InventoryPrediction? inventoryPredictionTyped;
+  CashflowPrediction? cashflowPrediction;
+  InventoryPrediction? inventoryPrediction;
   Map<String, dynamic> expenseSummary = {};
   List<Anomaly> anomalies = [];
   List<Alert> alerts = [];
@@ -159,15 +159,12 @@ class AppStateController extends ChangeNotifier {
     }
 
     try {
-      latestPredictions = await _predictionsApi.getLatestPredictions(
+      final predictions = await _predictionsApi.getLatestPredictions(
         accessToken: token,
       );
-      if (latestPredictions.containsKey('cashflow_prediction')) {
-        cashflowPredictionTyped = latestPredictions['cashflow_prediction'];
-      }
-      if (latestPredictions.containsKey('inventory_prediction')) {
-        inventoryPredictionTyped = latestPredictions['inventory_prediction'];
-      }
+      cashflowPrediction = predictions['cashflow_prediction'] as CashflowPrediction?;
+      inventoryPrediction = predictions['inventory_prediction'] as InventoryPrediction?;
+      latestPredictions = predictions; // Keep for any legacy consumers
     } catch (_) {
       // Keep fallback values.
     }

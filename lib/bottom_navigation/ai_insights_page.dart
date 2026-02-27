@@ -14,9 +14,8 @@ class AiInsightsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppStateController>();
-    final predictions = state.latestPredictions;
-    final cashflowPred = predictions['cashflow_prediction'] as CashflowPrediction?;
-    final inventoryPred = predictions['inventory_prediction'] as InventoryPrediction?;
+    final cashflowPred = state.cashflowPrediction;
+    final inventoryPred = state.inventoryPrediction;
 
     return Scaffold(
       backgroundColor: _bgCream,

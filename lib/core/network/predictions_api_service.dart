@@ -32,7 +32,7 @@ class PredictionsApiService {
     return [];
   }
 
-  Future<Map<String, dynamic>> insertCashflowPrediction({
+  Future<CashflowPrediction?> insertCashflowPrediction({
     required String businessId,
     required String riskLevel,
     required int daysUntilBroke,
@@ -48,11 +48,11 @@ class PredictionsApiService {
       },
     );
     final prediction = response['prediction'];
-    if (prediction is Map) return prediction.cast<String, dynamic>();
-    return {};
+    if (prediction is Map) return CashflowPrediction.fromJson(prediction.cast<String, dynamic>());
+    return null;
   }
 
-  Future<Map<String, dynamic>> insertInventoryPrediction({
+  Future<InventoryPrediction?> insertInventoryPrediction({
     required String businessId,
     required int criticalItems,
     required int warningItems,
@@ -68,11 +68,11 @@ class PredictionsApiService {
       },
     );
     final prediction = response['prediction'];
-    if (prediction is Map) return prediction.cast<String, dynamic>();
-    return {};
+    if (prediction is Map) return InventoryPrediction.fromJson(prediction.cast<String, dynamic>());
+    return null;
   }
 
-  Future<Map<String, dynamic>> insertAnomaly({
+  Future<Anomaly?> insertAnomaly({
     required String transactionId,
     required String anomalyLevel,
     required double zScore,
@@ -88,8 +88,8 @@ class PredictionsApiService {
       },
     );
     final anomaly = response['anomaly'];
-    if (anomaly is Map) return anomaly.cast<String, dynamic>();
-    return {};
+    if (anomaly is Map) return Anomaly.fromJson(anomaly.cast<String, dynamic>());
+    return null;
   }
 
   Future<Map<String, dynamic>> _get(
