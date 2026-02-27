@@ -15,8 +15,8 @@ class AiInsightsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<AppStateController>();
     final predictions = state.latestPredictions;
-    final cashflowPred = predictions['cashflow_prediction'] as Map<String, dynamic>? ?? {};
-    final inventoryPred = predictions['inventory_prediction'] as Map<String, dynamic>? ?? {};
+    final cashflowPred = predictions['cashflow_prediction'] as CashflowPrediction?;
+    final inventoryPred = predictions['inventory_prediction'] as InventoryPrediction?;
 
     return Scaffold(
       backgroundColor: _bgCream,
@@ -67,10 +67,10 @@ class AiInsightsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCashflowCard(Map<String, dynamic> data) {
-    final riskLevel = (data['risk_level'] ?? 'Unknown').toString().toUpperCase();
-    final days = data['days_until_broke'] ?? 0;
-    final confidence = ((data['confidence_score'] as num?)?.toDouble() ?? 0.0) * 100;
+  Widget _buildCashflowCard(CashflowPrediction? data) {
+    final riskLevel = (data?.riskLevel ?? 'Unknown').toUpperCase();
+    final days = data?.daysUntilBroke ?? 0;
+    final confidence = (data?.confidenceScore ?? 0.0) * 100;
 
     Color riskColor = Colors.green;
     if (riskLevel == 'MEDIUM') riskColor = Colors.orange;
@@ -110,9 +110,9 @@ class AiInsightsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildInventoryCard(Map<String, dynamic> data) {
-    final valueAtRisk = (data['total_value_at_risk'] as num?)?.toDouble() ?? 0.0;
-    final critical = data['critical_items'] ?? 0;
+  Widget _buildInventoryCard(InventoryPrediction? data) {
+    final valueAtRisk = data?.totalValueAtRisk ?? 0.0;
+    final critical = data?.criticalItems ?? 0;
     final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
 
     return Container(
