@@ -17,6 +17,7 @@ class _CashflowScreenState extends State<CashflowScreen> {
   final Color bgCream = const Color(0xFFFDFBF7);
   DateTime _lastUpdated = DateTime.now();
   bool _isLoading = false;
+  bool _isFirstLoad = true;
 
   @override
   void initState() {
@@ -33,11 +34,13 @@ class _CashflowScreenState extends State<CashflowScreen> {
       // As per architecture, this fetches the report which contains the balance.
       await context.read<AppStateController>().loadCashflowReport();
       await context.read<AppStateController>().loadTransactionsFromBackend();
+      await context.read<AppStateController>().loadInsightsFromBackend();
     } finally {
       if (mounted) {
         setState(() {
           _lastUpdated = DateTime.now();
           _isLoading = false;
+          _isFirstLoad = false;
         });
       }
     }
@@ -49,7 +52,9 @@ class _CashflowScreenState extends State<CashflowScreen> {
     return Scaffold(
       backgroundColor: bgCream,
       body: SafeArea(
-        child: Consumer<AppStateController>(
+        child: _isFirstLoad
+            ? Center(child: CircularProgressIndicator(color: primaryGreen))
+            : Consumer<AppStateController>(
           builder: (context, state, child) {
             final totals = _totalsFromState(state);
             return RefreshIndicator(
