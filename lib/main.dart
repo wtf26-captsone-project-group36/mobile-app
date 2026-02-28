@@ -103,7 +103,7 @@ class SurplusApp extends StatelessWidget {
       title: 'HerVest AI',
       theme: ThemeData(
         useMaterial3: true,
-        // Branding Palette matches your screenshots
+        // Branding Palette
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF006B4D), // Deep Green
           primary: const Color(0xFF006B4D),
