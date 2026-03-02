@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:hervest_ai/core/config/demo_flags.dart';
 import 'package:hervest_ai/core/network/activity_api_service.dart';
 import 'package:hervest_ai/core/network/alerts_api_service.dart';
 import 'package:hervest_ai/core/network/audit_api_service.dart';
 import 'package:hervest_ai/core/network/budget_api_service.dart';
+import 'package:hervest_ai/core/storage/cashflow_fallback_store.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
 import 'package:hervest_ai/core/network/cashflow_api_service.dart';
 import 'package:hervest_ai/core/network/expense_api_service.dart';
@@ -21,6 +23,7 @@ class AppStateController extends ChangeNotifier {
   final BudgetApiService _budgetApi = const BudgetApiService();
   final ExpenseApiService _expenseApi = const ExpenseApiService();
   final AuditApiService _auditApi = const AuditApiService();
+  final CashflowFallbackStore _fallbackStore = CashflowFallbackStore.instance;
   Map<String, dynamic> cashflowReport = {};
   CashflowReport? cashflowReportTyped;
   Map<String, dynamic> latestPredictions = {};
@@ -112,23 +115,35 @@ class AppStateController extends ChangeNotifier {
         notifyListeners();
       }
     } catch (_) {
-      // Keep local optimistic entry.
+      await _fallbackStore.addTransaction(
+        type: type.toLowerCase(),
+        amount: _parseAmount(amount),
+        category: title,
+        description: note,
+        date: DateTime.tryParse(date),
+      );
     }
   }
 
   Future<void> loadTransactionsFromBackend() async {
     final token = await AppSessionStore.instance.getAccessToken();
-    if (token == null || token.isEmpty) return;
+    final fallbackRows = await _fallbackStore.getTransactions();
+
+    if (token == null || token.isEmpty) {
+      transactions = fallbackRows.map(_mapLocalTransaction).toList();
+      notifyListeners();
+      return;
+    }
 
     try {
       final rows = await _cashflowApi.getTransactions(accessToken: token);
-      if (rows.isNotEmpty) {
-        transactions =
-            rows.map(_mapApiTransactionTyped).where((e) => e.isNotEmpty).toList();
-      }
+      final backend = rows.map(_mapApiTransactionTyped).where((e) => e.isNotEmpty).toList();
+      final local = fallbackRows.map(_mapLocalTransaction).toList();
+      transactions = _mergeUiTransactions(backend, local);
       notifyListeners();
     } catch (_) {
-      // Keep local fallback data.
+      transactions = fallbackRows.map(_mapLocalTransaction).toList();
+      notifyListeners();
     }
   }
 
@@ -222,12 +237,20 @@ class AppStateController extends ChangeNotifier {
 
   Future<void> loadBudgetsFromBackend() async {
     final token = await AppSessionStore.instance.getAccessToken();
-    if (token == null || token.isEmpty) return;
+    final fallbackRows = await _fallbackStore.getBudgets();
+    final localBudgets = fallbackRows.map((e) => Budget.fromJson(e)).toList();
+    if (token == null || token.isEmpty) {
+      budgets = localBudgets;
+      notifyListeners();
+      return;
+    }
     try {
-      budgets = await _budgetApi.getBudgets(accessToken: token);
+      final backend = await _budgetApi.getBudgets(accessToken: token);
+      budgets = [...backend, ...localBudgets.where((b) => !_containsBudget(backend, b.id))];
       notifyListeners();
     } catch (_) {
-      // Keep fallback values.
+      budgets = localBudgets;
+      notifyListeners();
     }
   }
 
@@ -253,7 +276,13 @@ class AppStateController extends ChangeNotifier {
       );
       await loadBudgetsFromBackend();
     } catch (_) {
-      // Keep fallback values.
+      if (DemoFlags.presentationMode) {
+        await _fallbackStore.addBudget(
+          category: category ?? name,
+          allocatedAmount: amount,
+        );
+        await loadBudgetsFromBackend();
+      }
     }
   }
 
@@ -288,22 +317,33 @@ class AppStateController extends ChangeNotifier {
       await _budgetApi.deleteBudget(accessToken: token, id: id);
       await loadBudgetsFromBackend();
     } catch (_) {
-      // Keep fallback values.
+      if (DemoFlags.presentationMode) {
+        await _fallbackStore.removeBudget(id);
+        await loadBudgetsFromBackend();
+      }
     }
   }
 
   Future<void> loadExpensesFromBackend() async {
     final token = await AppSessionStore.instance.getAccessToken();
-    if (token == null || token.isEmpty) return;
+    final fallbackRows = await _fallbackStore.getExpenses();
+    final localExpenses = fallbackRows.map((e) => Expense.fromJson(e)).toList();
+    if (token == null || token.isEmpty) {
+      expenses = localExpenses;
+      expenseSummary = _buildExpenseSummary(localExpenses);
+      notifyListeners();
+      return;
+    }
     try {
-      expenses = await _expenseApi.getExpenses(accessToken: token);
+      final backend = await _expenseApi.getExpenses(accessToken: token);
+      expenses = [...backend, ...localExpenses.where((e) => !_containsExpense(backend, e.id))];
     } catch (_) {
-      // Keep fallback values.
+      expenses = localExpenses;
     }
     try {
       expenseSummary = await _expenseApi.getExpenseSummary(accessToken: token);
     } catch (_) {
-      // Keep fallback values.
+      expenseSummary = _buildExpenseSummary(expenses);
     }
     notifyListeners();
   }
@@ -329,7 +369,16 @@ class AppStateController extends ChangeNotifier {
       );
       await loadExpensesFromBackend();
     } catch (_) {
-      // Keep fallback values.
+      if (DemoFlags.presentationMode) {
+        await _fallbackStore.addExpense(
+          title: title,
+          amount: amount,
+          category: (category != null && category.isNotEmpty) ? category : 'General',
+          description: description,
+          status: 'pending',
+        );
+        await loadExpensesFromBackend();
+      }
     }
   }
 
@@ -423,6 +472,64 @@ class AppStateController extends ChangeNotifier {
       'amount': 'NGN ${_formatAmount(tx.amount)}',
       'type': tx.type == 'income' ? 'Income' : 'Expense',
       'date': _formatDateForUi(tx.date.toIso8601String()),
+    };
+  }
+
+  Map<String, dynamic> _mapLocalTransaction(Map<String, dynamic> row) {
+    final amount = (row['amount'] as num?)?.toDouble() ?? 0;
+    final type = (row['type'] ?? 'expense').toString().toLowerCase();
+    final dateRaw = (row['date'] ?? '').toString();
+    return {
+      'title': (row['category'] ?? 'Other').toString(),
+      'amount': 'NGN ${_formatAmount(amount)}',
+      'type': type == 'income' ? 'Income' : 'Expense',
+      'date': _formatDateForUi(dateRaw),
+    };
+  }
+
+  List<Map<String, dynamic>> _mergeUiTransactions(
+    List<Map<String, dynamic>> backend,
+    List<Map<String, dynamic>> local,
+  ) {
+    final seen = <String>{};
+    final merged = <Map<String, dynamic>>[];
+    for (final row in [...backend, ...local]) {
+      final key = '${row['title']}|${row['amount']}|${row['type']}|${row['date']}';
+      if (seen.add(key)) merged.add(row);
+    }
+    return merged;
+  }
+
+  bool _containsBudget(List<Budget> list, String id) {
+    return list.any((b) => b.id == id);
+  }
+
+  bool _containsExpense(List<Expense> list, String id) {
+    return list.any((e) => e.id == id);
+  }
+
+  Map<String, dynamic> _buildExpenseSummary(List<Expense> rows) {
+    double submitted = 0;
+    double approved = 0;
+    double pending = 0;
+    double rejected = 0;
+    double cancelled = 0;
+
+    for (final e in rows) {
+      submitted += e.amount;
+      if (e.status == 'approved') approved += e.amount;
+      if (e.status == 'pending') pending += e.amount;
+      if (e.status == 'rejected') rejected += e.amount;
+      if (e.status == 'cancelled') cancelled += e.amount;
+    }
+
+    return {
+      'total_submitted': submitted,
+      'total_approved': approved,
+      'total_pending': pending,
+      'total_rejected': rejected,
+      'total_cancelled': cancelled,
+      'count': rows.length,
     };
   }
 

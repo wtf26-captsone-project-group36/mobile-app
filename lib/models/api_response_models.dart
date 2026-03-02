@@ -312,12 +312,26 @@ class CashflowPrediction {
   });
 
   factory CashflowPrediction.fromJson(Map<String, dynamic> json) {
+    final rawConfidence =
+        (json['confidence_score'] as num?)?.toDouble() ??
+        (json['confidence'] as num?)?.toDouble() ??
+        (json['probability'] as num?)?.toDouble() ??
+        0;
+    final normalizedConfidence =
+        rawConfidence > 1 && rawConfidence <= 100
+            ? rawConfidence / 100
+            : rawConfidence;
+
     return CashflowPrediction(
       id: (json['prediction_id'] ?? json['id'] ?? '').toString(),
       businessId: (json['business_id'] ?? '').toString(),
       riskLevel: (json['risk_level'] ?? 'medium').toString(),
-      daysUntilBroke: json['days_until_broke'] as int? ?? 0,
-      confidenceScore: (json['confidence_score'] as num?)?.toDouble() ?? 0,
+      daysUntilBroke:
+          json['days_until_broke'] as int? ??
+          json['runway_days'] as int? ??
+          json['days'] as int? ??
+          0,
+      confidenceScore: normalizedConfidence.clamp(0, 1).toDouble(),
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'].toString())
           : DateTime.now(),

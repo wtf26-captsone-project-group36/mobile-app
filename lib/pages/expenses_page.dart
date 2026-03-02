@@ -52,9 +52,9 @@ class _ExpensesPageState extends State<ExpensesPage> {
               itemBuilder: (context, index) {
                 final row = state.expenses[index];
                 final id = row.id;
-                final title = row.title ?? row.category;
+                final title = row.title.isNotEmpty ? row.title : row.category;
                 final amount = row.amount.toString();
-                final status = (row.status ?? 'pending').toLowerCase();
+                final status = row.status.toLowerCase();
                 return Card(
                   child: ListTile(
                     title: Text(title),
@@ -151,6 +151,12 @@ class _ExpensesPageState extends State<ExpensesPage> {
                 );
                 if (!context.mounted) return;
                 Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Expense submitted successfully!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
               },
               child: const Text('Submit'),
             ),

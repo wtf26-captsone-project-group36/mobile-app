@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:hervest_ai/core/config/demo_flags.dart';
 import 'package:hervest_ai/core/network/budget_api_service.dart';
 import 'package:hervest_ai/core/network/cashflow_api_service.dart';
 import 'package:hervest_ai/core/network/expense_api_service.dart';
+import 'package:hervest_ai/core/storage/cashflow_fallback_store.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
 import 'package:hervest_ai/models/api_response_models.dart';
 import 'package:hervest_ai/widgets/app_input_styles.dart';
@@ -32,6 +34,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
   final BudgetApiService _budgetService = BudgetApiService();
   final CashflowApiService _cashflowService = const CashflowApiService();
   final ExpenseApiService _expenseService = const ExpenseApiService();
+  final CashflowFallbackStore _fallbackStore = CashflowFallbackStore.instance;
   final ImagePicker _imagePicker = ImagePicker();
 
   // State
@@ -459,7 +462,39 @@ class _AddExpensePageState extends State<AddExpensePage> {
         return;
       }
 
-      // Demo fallback: treat transient backend failures as success.
+      if (!DemoFlags.presentationMode) {
+        final raw = e.toString().replaceFirst('Exception: ', '').trim();
+        final msg = raw.isEmpty
+            ? "Could not save the expense. Please check your connection and try again."
+            : raw;
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text("Save failed"),
+            content: Text(msg),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("OK"))
+            ],
+          ),
+        );
+        return;
+      }
+
+      // Presentation fallback: treat transient backend failures as success.
+      await _fallbackStore.addTransaction(
+        type: 'expense',
+        amount: amount,
+        category: _categoryController.text.trim(),
+        description: _descriptionController.text.trim(),
+        date: _selectedDate,
+      );
+      await _fallbackStore.addExpense(
+        title: _categoryController.text.trim(),
+        amount: amount,
+        category: _categoryController.text.trim(),
+        description: _descriptionController.text.trim(),
+        status: 'pending',
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Expense saved successfully!"),

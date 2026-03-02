@@ -1,7 +1,99 @@
 const { supabaseAdmin } = require('../config/supabase');
 
+function pickFirstDefined(...values) {
+  for (const value of values) {
+    if (value !== undefined && value !== null) return value;
+  }
+  return undefined;
+}
+
+function toNumber(value, fallback = 0) {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function toInteger(value, fallback = 0) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizeRiskLevel(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (!raw) return 'medium';
+  if (['low', 'medium', 'high', 'critical'].includes(raw)) return raw;
+  if (raw.includes('crit')) return 'critical';
+  if (raw.includes('high')) return 'high';
+  if (raw.includes('low')) return 'low';
+  return 'medium';
+}
+
+function normalizeConfidence(value) {
+  let confidence = toNumber(value, 0.5);
+  if (confidence > 1 && confidence <= 100) {
+    confidence = confidence / 100;
+  }
+  if (confidence < 0) confidence = 0;
+  if (confidence > 1) confidence = 1;
+  return Number.parseFloat(confidence.toFixed(4));
+}
+
 async function insertCashflowPrediction(req, res) {
-  const { business_id, risk_level, days_until_broke, confidence_score, summary } = req.body;
+  const localPrediction = req.body.local_prediction || {};
+  const backendResponse = req.body.backend_response || {};
+  const modelResponse = req.body.model_response || {};
+
+  const business_id = pickFirstDefined(
+    req.body.business_id,
+    req.body.businessId,
+    localPrediction.business_id,
+    modelResponse.business_id,
+    backendResponse.business_id
+  );
+
+  const risk_level = normalizeRiskLevel(
+    pickFirstDefined(
+      req.body.risk_level,
+      req.body.riskLevel,
+      localPrediction.risk_level,
+      localPrediction.risk,
+      localPrediction.riskLevel,
+      modelResponse.risk_level,
+      backendResponse.risk_level
+    )
+  );
+
+  const days_until_broke = toInteger(
+    pickFirstDefined(
+      req.body.days_until_broke,
+      req.body.daysUntilBroke,
+      localPrediction.days_until_broke,
+      localPrediction.runway_days,
+      localPrediction.days,
+      modelResponse.days_until_broke,
+      backendResponse.days_until_broke
+    ),
+    0
+  );
+
+  const confidence_score = normalizeConfidence(
+    pickFirstDefined(
+      req.body.confidence_score,
+      req.body.confidenceScore,
+      localPrediction.confidence_score,
+      localPrediction.confidence,
+      localPrediction.probability,
+      modelResponse.confidence_score,
+      backendResponse.confidence_score
+    )
+  );
+
+  const summary = pickFirstDefined(
+    req.body.summary,
+    req.body.local_summary,
+    req.body.input_summary,
+    localPrediction.summary
+  );
+
   if (!business_id) return res.status(400).json({ error: 'business_id is required' });
 
   try {
@@ -27,7 +119,54 @@ async function insertCashflowPrediction(req, res) {
 }
 
 async function insertInventoryPrediction(req, res) {
-  const { business_id, critical_items, warning_items, total_value_at_risk, summary } = req.body;
+  const localResult = req.body.local_result || {};
+  const backendResponse = req.body.backend_response || {};
+  const modelResponse = req.body.model_response || {};
+
+  const business_id = pickFirstDefined(
+    req.body.business_id,
+    req.body.businessId,
+    localResult.business_id,
+    modelResponse.business_id,
+    backendResponse.business_id
+  );
+  const critical_items = toInteger(
+    pickFirstDefined(
+      req.body.critical_items,
+      req.body.criticalItems,
+      localResult.critical_items,
+      modelResponse.critical_items,
+      backendResponse.critical_items
+    ),
+    0
+  );
+  const warning_items = toInteger(
+    pickFirstDefined(
+      req.body.warning_items,
+      req.body.warningItems,
+      localResult.warning_items,
+      modelResponse.warning_items,
+      backendResponse.warning_items
+    ),
+    0
+  );
+  const total_value_at_risk = toNumber(
+    pickFirstDefined(
+      req.body.total_value_at_risk,
+      req.body.totalValueAtRisk,
+      localResult.total_value_at_risk,
+      modelResponse.total_value_at_risk,
+      backendResponse.total_value_at_risk
+    ),
+    0
+  );
+  const summary = pickFirstDefined(
+    req.body.summary,
+    req.body.local_summary,
+    req.body.input_summary,
+    localResult.summary
+  );
+
   if (!business_id) return res.status(400).json({ error: 'business_id is required' });
 
   try {

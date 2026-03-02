@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hervest_ai/core/config/demo_flags.dart';
 import 'package:hervest_ai/core/network/cashflow_api_service.dart';
+import 'package:hervest_ai/core/storage/cashflow_fallback_store.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
 import 'package:intl/intl.dart';
 import 'package:hervest_ai/widgets/app_input_styles.dart';
@@ -17,6 +19,7 @@ class _AddIncomePageState extends State<AddIncomePage> {
   final Color primaryGreen = const Color(0xFF006B4D);
   final Color bgCream = const Color(0xFFFDFBF7);
   final CashflowApiService _cashflowService = const CashflowApiService();
+  final CashflowFallbackStore _fallbackStore = CashflowFallbackStore.instance;
   bool _isSubmitting = false;
 
   final _amountController = TextEditingController();
@@ -362,7 +365,30 @@ class _AddIncomePageState extends State<AddIncomePage> {
         return;
       }
 
-      // Demo fallback: treat transient backend failures as success.
+      if (!DemoFlags.presentationMode) {
+        final raw = e.toString().replaceFirst('Exception: ', '').trim();
+        final message = raw.isEmpty ? 'Could not save income. Please try again.' : raw;
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text("Save failed"),
+            content: Text(message),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("OK")),
+            ],
+          ),
+        );
+        return;
+      }
+
+      // Presentation fallback: treat transient backend failures as success.
+      await _fallbackStore.addTransaction(
+        type: 'income',
+        amount: amount,
+        category: category,
+        description: _descriptionController.text.trim(),
+        date: _selectedDate,
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Income saved successfully!"),

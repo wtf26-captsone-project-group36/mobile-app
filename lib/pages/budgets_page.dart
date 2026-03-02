@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hervest_ai/core/config/demo_flags.dart';
 import 'package:hervest_ai/core/network/budget_api_service.dart';
+import 'package:hervest_ai/core/storage/cashflow_fallback_store.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
 import 'package:hervest_ai/models/api_response_models.dart';
 import 'package:intl/intl.dart';
@@ -14,6 +16,7 @@ class BudgetsPage extends StatefulWidget {
 
 class _BudgetsPageState extends State<BudgetsPage> {
   final BudgetApiService _budgetService = BudgetApiService();
+  final CashflowFallbackStore _fallbackStore = CashflowFallbackStore.instance;
   final Color _primaryGreen = const Color(0xFF006B4D);
   final Color _bgCream = const Color(0xFFFDFBF7);
 
@@ -30,19 +33,34 @@ class _BudgetsPageState extends State<BudgetsPage> {
     setState(() => _isLoading = true);
     try {
       final token = await AppSessionStore.instance.getAccessToken();
+      final local = (await _fallbackStore.getBudgets())
+          .map((e) => Budget.fromJson(e))
+          .toList();
       if (token != null) {
         final data = await _budgetService.getBudgets(accessToken: token);
         if (mounted) {
           setState(() {
-            _budgets = data;
+            _budgets = [...data, ...local.where((b) => !data.any((r) => r.id == b.id))];
+            _isLoading = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _budgets = local;
             _isLoading = false;
           });
         }
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
-        // Silently fail or show generic error if needed
+        final local = (await _fallbackStore.getBudgets())
+            .map((row) => Budget.fromJson(row))
+            .toList();
+        setState(() {
+          _budgets = local;
+          _isLoading = false;
+        });
       }
     }
   }
@@ -83,29 +101,40 @@ class _BudgetsPageState extends State<BudgetsPage> {
           return;
         }
 
-        final now = DateTime.now();
-        final start = DateTime(now.year, now.month, 1);
-        final end = DateTime(now.year, now.month + 1, 0);
-        setState(() {
-          _budgets.insert(
-            0,
-            Budget(
-              id: 'demo-${DateTime.now().millisecondsSinceEpoch}',
-              category: category,
-              allocatedAmount: amount,
-              spentAmount: 0,
-              remainingAmount: amount,
-              period: 'monthly',
-              isActive: true,
-              createdAt: start,
-              updatedAt: end,
-            ),
+        if (DemoFlags.presentationMode) {
+          final now = DateTime.now();
+          final start = DateTime(now.year, now.month, 1);
+          final end = DateTime(now.year, now.month + 1, 0);
+          setState(() {
+            _budgets.insert(
+              0,
+              Budget(
+                id: 'demo-${DateTime.now().millisecondsSinceEpoch}',
+                category: category,
+                allocatedAmount: amount,
+                spentAmount: 0,
+                remainingAmount: amount,
+                period: 'monthly',
+                isActive: true,
+                createdAt: start,
+                updatedAt: end,
+              ),
+            );
+          });
+          await _fallbackStore.addBudget(
+            category: category,
+            allocatedAmount: amount,
           );
-        });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Budget set successfully')),
+          );
+          Navigator.of(context).pop();
+          return;
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Budget set successfully')),
+          const SnackBar(content: Text('Could not set budget')),
         );
-        Navigator.of(context).pop();
       }
     }
   }
@@ -135,8 +164,17 @@ class _BudgetsPageState extends State<BudgetsPage> {
           return;
         }
 
+        if (DemoFlags.presentationMode) {
+          await _fallbackStore.removeBudget(id);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Budget removed')),
+          );
+          _loadBudgets();
+          return;
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Budget removed')),
+          const SnackBar(content: Text('Could not delete budget')),
         );
       }
     }
