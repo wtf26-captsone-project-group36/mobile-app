@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:hervest_ai/core/network/budget_api_service.dart';
-import 'package:hervest_ai/core/network/expense_api_service.dart';
+import 'package:hervest_ai/core/network/cashflow_api_service.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
 import 'package:hervest_ai/models/api_response_models.dart';
 import 'package:hervest_ai/widgets/app_input_styles.dart';
@@ -23,7 +23,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
 
   // API Services
   final BudgetApiService _budgetService = BudgetApiService();
-  final ExpenseApiService _expenseService = ExpenseApiService();
+  final CashflowApiService _cashflowService = const CashflowApiService();
   final ImagePicker _imagePicker = ImagePicker();
 
   // State
@@ -368,7 +368,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
     try {
       // NOTE: File upload would be handled here, likely with a multipart request.
       // For this example, we are only saving the text data.
-      await _expenseService.submitExpense(accessToken: token, body: body);
+      await _cashflowService.createTransaction(accessToken: token, body: body);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

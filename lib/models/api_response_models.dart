@@ -646,14 +646,28 @@ class CashflowReport {
   });
 
   factory CashflowReport.fromJson(Map<String, dynamic> json) {
+    final totalIncome = (json['total_income'] as num?)?.toDouble() ?? 0;
+    final totalExpense =
+        (json['total_expense'] as num?)?.toDouble() ??
+        (json['total_expenses'] as num?)?.toDouble() ??
+        0;
+    final refunds = (json['total_refunds'] as num?)?.toDouble() ?? 0;
+    final balance =
+        (json['balance'] as num?)?.toDouble() ??
+        (json['net_balance'] as num?)?.toDouble() ??
+        (totalIncome - totalExpense + refunds);
+
     return CashflowReport(
-      totalIncome: (json['total_income'] as num?)?.toDouble() ?? 0,
-      totalExpense: (json['total_expense'] as num?)?.toDouble() ?? 0,
-      balance: (json['balance'] as num?)?.toDouble() ?? 0,
+      totalIncome: totalIncome,
+      totalExpense: totalExpense,
+      balance: balance,
       cashRunwayDays: json['cash_runway_days'] as int? ?? 0,
       averageDailyBurn: (json['average_daily_burn'] as num?)?.toDouble() ?? 0,
       period: (json['period'] ?? 'current_month').toString(),
-      transactionsCount: json['transactions_count'] as int? ?? 0,
+      transactionsCount:
+          json['transactions_count'] as int? ??
+          json['transaction_count'] as int? ??
+          0,
     );
   }
 

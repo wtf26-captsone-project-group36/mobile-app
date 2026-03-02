@@ -379,11 +379,26 @@ class _CashflowScreenState extends State<CashflowScreen> {
   }
 
   _CashflowTotals _totalsFromState(AppStateController state) {
+    final typed = state.cashflowReportTyped;
+    if (typed != null) {
+      return _CashflowTotals(
+        income: typed.totalIncome,
+        expense: typed.totalExpense,
+        net: typed.balance,
+      );
+    }
+
     final report = state.cashflowReport;
     if (report.isNotEmpty) {
       final income = (report['total_income'] as num?)?.toDouble() ?? 0;
-      final expense = (report['total_expenses'] as num?)?.toDouble() ?? 0;
-      final net = (report['net_balance'] as num?)?.toDouble() ?? (income - expense);
+      final expense =
+          (report['total_expense'] as num?)?.toDouble() ??
+          (report['total_expenses'] as num?)?.toDouble() ??
+          0;
+      final net =
+          (report['balance'] as num?)?.toDouble() ??
+          (report['net_balance'] as num?)?.toDouble() ??
+          (income - expense);
       return _CashflowTotals(income: income, expense: expense, net: net);
     }
     return _calculateTotals(state.transactions);
