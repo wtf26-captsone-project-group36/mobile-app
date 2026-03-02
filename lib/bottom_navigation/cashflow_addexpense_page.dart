@@ -17,6 +17,12 @@ class AddExpensePage extends StatefulWidget {
 
 class _AddExpensePageState extends State<AddExpensePage> {
   static const String _customCategoryOption = 'Other (Custom)';
+  static const List<String> _fallbackCategories = <String>[
+    'Operations',
+    'Utilities',
+    'Logistics',
+    'Marketing',
+  ];
   final Color primaryGreen = const Color(0xFF006B4D);
   final Color bgCream = const Color(0xFFFDFBF7);
   final Color expenseRed = Colors.red.shade700;
@@ -126,27 +132,22 @@ class _AddExpensePageState extends State<AddExpensePage> {
 
               const SizedBox(height: 20),
               _buildLabel("Category"),
-              _budgets.isEmpty
-                  ? _buildTextField(
+              Column(
+                children: [
+                  _buildCategoryDropdown(),
+                  if (_isCustomCategory) ...[
+                    const SizedBox(height: 10),
+                    _buildTextField(
                       controller: _categoryController,
-                      hint: "Enter category (e.g., Food)",
-                      helper: "No budgets found. You can still add an expense.",
-                      onChanged: _onCategoryChanged,
-                    )
-                  : Column(
-                      children: [
-                        _buildCategoryDropdown(),
-                        if (_isCustomCategory) ...[
-                          const SizedBox(height: 10),
-                          _buildTextField(
-                            controller: _categoryController,
-                            hint: "Enter custom category",
-                            helper: null,
-                            onChanged: (_) => setState(() {}),
-                          ),
-                        ],
-                      ],
+                      hint: "Enter custom category",
+                      helper: _budgets.isEmpty
+                          ? "No budget categories found. Add your own category."
+                          : null,
+                      onChanged: (_) => setState(() {}),
                     ),
+                  ],
+                ],
+              ),
               if (_selectedCategoryBudget != null)
                 _buildBudgetIndicator(_selectedCategoryBudget!),
 
@@ -313,8 +314,15 @@ class _AddExpensePageState extends State<AddExpensePage> {
   Widget _buildCategoryDropdown() {
     final options = <String>{
       ..._budgets.map((b) => b.category).where((c) => c.trim().isNotEmpty),
+      ..._fallbackCategories,
       _customCategoryOption,
     }.toList();
+    options.sort((a, b) {
+      if (a == _customCategoryOption) return 1;
+      if (b == _customCategoryOption) return -1;
+      return a.toLowerCase().compareTo(b.toLowerCase());
+    });
+
     final selectedValue = _isCustomCategory
         ? _customCategoryOption
         : (_categoryController.text.trim().isNotEmpty &&
@@ -325,6 +333,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
     return DropdownButtonFormField<String>(
       value: selectedValue,
       hint: const Text("Select a category"),
+      icon: const Icon(Icons.arrow_drop_down_rounded),
       items: options.map((category) {
         return DropdownMenuItem<String>(value: category, child: Text(category));
       }).toList(),
@@ -506,7 +515,8 @@ class _AddExpensePageState extends State<AddExpensePage> {
     }
   }
   void _onCategoryChanged(String categoryName) {
-    if (categoryName == _customCategoryOption) {
+    final normalized = categoryName.trim();
+    if (normalized == _customCategoryOption) {
       setState(() {
         _isCustomCategory = true;
         _selectedCategoryBudget = null;
@@ -514,9 +524,17 @@ class _AddExpensePageState extends State<AddExpensePage> {
       });
       return;
     }
+    if (normalized.isEmpty) {
+      setState(() {
+        _isCustomCategory = false;
+        _selectedCategoryBudget = null;
+        _categoryController.clear();
+      });
+      return;
+    }
 
     final budget = _budgets.firstWhere(
-      (b) => b.category.toLowerCase() == categoryName.trim().toLowerCase(),
+      (b) => b.category.toLowerCase() == normalized.toLowerCase(),
       orElse: () => Budget(
         id: '',
         category: '',
@@ -532,7 +550,10 @@ class _AddExpensePageState extends State<AddExpensePage> {
     setState(() {
       _isCustomCategory = false;
       _selectedCategoryBudget = budget.id.isNotEmpty ? budget : null;
-      _categoryController.text = categoryName;
+      _categoryController.value = TextEditingValue(
+        text: normalized,
+        selection: TextSelection.collapsed(offset: normalized.length),
+      );
     });
   }
 }
