@@ -2,6 +2,21 @@ const { supabaseAdmin } = require('../config/supabase');
 const { auditLog } = require('../utils/auditLogger');
 const { triggerAnomalyDetection } = require('../utils/aiClient');
 
+async function incrementBudgetSpendById(budgetId, amount) {
+  if (!budgetId || !Number.isFinite(amount) || amount <= 0) return;
+  const { data: budget, error } = await supabaseAdmin
+    .from('budgets')
+    .select('budget_id, spent_amount')
+    .eq('budget_id', budgetId)
+    .single();
+  if (error || !budget) return;
+  const nextSpent = Number.parseFloat(budget.spent_amount || 0) + amount;
+  await supabaseAdmin
+    .from('budgets')
+    .update({ spent_amount: nextSpent })
+    .eq('budget_id', budgetId);
+}
+
 function toExpenseDto(row) {
   if (!row) return null;
   return {
@@ -172,17 +187,33 @@ async function reviewExpense(req, res) {
     if (error) return res.status(400).json({ error: error.message });
 
     if (status === 'approved') {
+      const approvedAmount = Number.parseFloat(existing.amount || 0);
       await supabaseAdmin
         .from('transactions')
         .insert({
           business_id: businessId,
           date: new Date().toISOString(),
           type: 'expense',
-          amount: Number.parseFloat(existing.amount || 0),
+          amount: approvedAmount,
           category: existing.category || null,
           description: existing.purpose || null
         });
 
+      const { data: biz } = await supabaseAdmin
+        .from('businesses')
+        .select('current_balance')
+        .eq('business_id', businessId)
+        .single();
+      if (biz) {
+        await supabaseAdmin
+          .from('businesses')
+          .update({
+            current_balance: Number.parseFloat(biz.current_balance || 0) - approvedAmount
+          })
+          .eq('business_id', businessId);
+      }
+
+      await incrementBudgetSpendById(existing.budget_id, approvedAmount);
       setImmediate(() => triggerAnomalyDetection(supabaseAdmin, businessId));
     }
 

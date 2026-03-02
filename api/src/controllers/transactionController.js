@@ -2,23 +2,69 @@ const { supabaseAdmin } = require('../config/supabase');
 const { auditLog } = require('../utils/auditLogger');
 const { triggerCashflowAnalysis } = require('../utils/aiClient');
 
+async function applyExpenseToMatchingBudget({
+  businessId,
+  category,
+  amount,
+  txDate
+}) {
+  if (!category || !category.trim() || !Number.isFinite(amount) || amount <= 0) {
+    return;
+  }
+
+  const dateOnly = new Date(txDate || new Date()).toISOString().slice(0, 10);
+  const normalizedCategory = category.trim().toLowerCase();
+
+  const { data: budgets, error } = await supabaseAdmin
+    .from('budgets')
+    .select('budget_id, spent_amount, category, period_start, period_end')
+    .eq('business_id', businessId)
+    .eq('is_active', true);
+
+  if (error || !budgets || budgets.length === 0) return;
+
+  const match = budgets.find((b) => {
+    const budgetCategory = (b.category || '').toString().trim().toLowerCase();
+    if (!budgetCategory || budgetCategory !== normalizedCategory) return false;
+    if (!b.period_start || !b.period_end) return true;
+    return dateOnly >= b.period_start && dateOnly <= b.period_end;
+  });
+
+  if (!match) return;
+
+  const nextSpent = Number.parseFloat(match.spent_amount || 0) + amount;
+  await supabaseAdmin
+    .from('budgets')
+    .update({ spent_amount: nextSpent })
+    .eq('budget_id', match.budget_id);
+}
+
 // =============================================
 // INSERT transaction — triggers AI cashflow analysis
 // =============================================
 async function insertTransaction(req, res) {
   const { type, amount, description, category, date, transaction_date } = req.body;
   const business_id = req.profile.business_id;
+  const parsedAmount = parseFloat(amount);
+  const txDate = (date || transaction_date) ? new Date(date || transaction_date).toISOString() : new Date().toISOString();
 
   try {
+    if (!['income', 'expense'].includes(type)) {
+      return res.status(400).json({ error: 'type must be income or expense' });
+    }
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      return res.status(400).json({ error: 'amount must be greater than 0' });
+    }
+
     const { data, error } = await supabaseAdmin
       .from('transactions')
       .insert({
         business_id,
         type,
-        amount: parseFloat(amount),
+        amount: parsedAmount,
         description: description || null,
         category: category || null,
-        date: (date || transaction_date) ? new Date(date || transaction_date).toISOString() : new Date().toISOString()
+        date: txDate
       })
       .select()
       .single();
@@ -26,7 +72,7 @@ async function insertTransaction(req, res) {
     if (error) return res.status(400).json({ error: error.message });
 
     // Update business current_balance
-    const balanceChange = type === 'income' ? parseFloat(amount) : -parseFloat(amount);
+    const balanceChange = type === 'income' ? parsedAmount : -parsedAmount;
 
     const { data: biz } = await supabaseAdmin
       .from('businesses')
@@ -39,6 +85,15 @@ async function insertTransaction(req, res) {
         .from('businesses')
         .update({ current_balance: parseFloat(biz.current_balance) + balanceChange })
         .eq('business_id', business_id);
+    }
+
+    if (type === 'expense') {
+      await applyExpenseToMatchingBudget({
+        businessId: business_id,
+        category,
+        amount: parsedAmount,
+        txDate
+      });
     }
 
     await auditLog({
