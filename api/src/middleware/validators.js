@@ -1,4 +1,4 @@
-function fail(res, details) {
+/*function fail(res, details) {
   return res.status(400).json({ error: 'Validation failed', details });
 }
 
@@ -121,3 +121,4 @@ module.exports = {
   expenseValidator,
   expenseReviewValidator
 };
+*/

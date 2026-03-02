@@ -17,19 +17,6 @@ const auditController = require('../controllers/auditController');
 // Middleware
 const { authenticate, requireRole } = require('../middleware/auth');
 
-// Validators
-const {
-  signUpValidator,
-  signInValidator,
-  otpValidator,
-  resetPasswordValidator,
-  inventoryValidator,
-  transactionValidator,
-  budgetValidator,
-  expenseValidator,
-  expenseReviewValidator
-} = require('../middleware/validators');
-
 // =============================================
 // HEALTH CHECK (public)
 // =============================================
@@ -47,12 +34,12 @@ router.get('/health', (req, res) => {
 // =============================================
 
 // Public
-router.post('/auth/signup', signUpValidator, authController.signUp);
-router.post('/auth/signup/verify', otpValidator, authController.verifySignup);
-router.post('/auth/signin', signInValidator, authController.signIn);
+router.post('/auth/signup', authController.signUp);
+router.post('/auth/signup/verify', authController.verifySignup);
+router.post('/auth/signin', authController.signIn);
 router.post('/auth/refresh', authController.refreshToken);
 router.post('/password/reset', authController.sendPasswordResetOTP);
-router.post('/password/verify', resetPasswordValidator, authController.verifyOTPAndResetPassword);
+router.post('/password/verify', authController.verifyOTPAndResetPassword);
 
 // Protected
 router.post('/auth/signout', authenticate, authController.signOut);
@@ -77,7 +64,6 @@ router.post(
   '/inventory',
   authenticate,
   requireRole('owner', 'manager'),
-  inventoryValidator,
   inventoryController.insertItem
 );
 
@@ -108,7 +94,6 @@ router.post(
   '/transactions',
   authenticate,
   requireRole('owner', 'manager'),
-  transactionValidator,
   transactionController.insertTransaction
 );
 
@@ -133,7 +118,6 @@ router.post(
   '/budgets',
   authenticate,
   requireRole('owner', 'manager'),
-  budgetValidator,
   budgetController.createBudget
 );
 
@@ -164,7 +148,6 @@ router.delete(
 router.post(
   '/expenses',
   authenticate,
-  expenseValidator,
   expenseController.submitExpense
 );
 
@@ -178,7 +161,6 @@ router.put(
   '/expenses/:id/review',
   authenticate,
   requireRole('owner', 'manager'),
-  expenseReviewValidator,
   expenseController.reviewExpense
 );
 

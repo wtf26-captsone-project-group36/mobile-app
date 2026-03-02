@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -95,28 +95,35 @@ class _CashflowScreenState extends State<CashflowScreen> {
   }
 
   Widget _buildBalanceCard(double width, double netBalance) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: primaryGreen,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Updated ${DateFormat('MMM d, h:mm a').format(_lastUpdated)}",
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
+        onTap: () => context.push('/cashflow/transactions'),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: primaryGreen,
+            borderRadius: BorderRadius.circular(16),
           ),
-          const SizedBox(height: 8),
-          Text(
-            "₦ ${_formatAmount(netBalance)}",
-            style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Updated ${DateFormat('MMM d, h:mm a').format(_lastUpdated)}",
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "₦ ${_formatAmount(netBalance)}",
+                style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              const Text("Available balance", style: TextStyle(color: Colors.white70, fontSize: 12)),
+            ],
           ),
-          const SizedBox(height: 4),
-          const Text("Available balance", style: TextStyle(color: Colors.white70, fontSize: 12)),
-        ],
+        ),
       ),
     );
   }
@@ -260,25 +267,33 @@ class _CashflowScreenState extends State<CashflowScreen> {
           ),
         ),
         const SizedBox(width: 10),
-        /*Expanded(
+        Expanded(
           child: OutlinedButton.icon(
             onPressed: () => context.push('/cashflow/expenses'),
             icon: const Icon(Icons.receipt_long_outlined),
             label: const Text('Expenses'),
           ),
         ),
-      */ ],
+      ],
     );
   } 
 
   Widget _buildRunwayCard(_CashflowTotals totals) {
     final bool positive = totals.net >= 0;
     return Container(
+      key: const Key('cashflow_summary_tile'),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
