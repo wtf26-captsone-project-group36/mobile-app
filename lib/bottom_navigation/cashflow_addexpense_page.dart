@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:hervest_ai/core/network/budget_api_service.dart';
 import 'package:hervest_ai/core/network/cashflow_api_service.dart';
+import 'package:hervest_ai/core/network/expense_api_service.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
 import 'package:hervest_ai/models/api_response_models.dart';
 import 'package:hervest_ai/widgets/app_input_styles.dart';
@@ -30,6 +31,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
   // API Services
   final BudgetApiService _budgetService = BudgetApiService();
   final CashflowApiService _cashflowService = const CashflowApiService();
+  final ExpenseApiService _expenseService = const ExpenseApiService();
   final ImagePicker _imagePicker = ImagePicker();
 
   // State
@@ -400,13 +402,38 @@ class _AddExpensePageState extends State<AddExpensePage> {
     };
 
     try {
-      // NOTE: File upload would be handled here, likely with a multipart request.
-      // For this example, we are only saving the text data.
-      await _cashflowService.createTransaction(accessToken: token, body: body);
+      // Try direct transaction logging first (owner/manager flow).
+      // If blocked by role, fall back to expense submission flow for staff.
+      try {
+        await _cashflowService.createTransaction(accessToken: token, body: body);
+      } catch (e) {
+        final raw = e.toString().toLowerCase();
+        final isRoleDenied = raw.contains('access denied') ||
+            raw.contains('required_roles') ||
+            raw.contains('403');
+        if (!isRoleDenied) rethrow;
+
+        await _expenseService.submitExpense(
+          accessToken: token,
+          body: {
+            'budget_id': _selectedCategoryBudget?.id,
+            'title': _categoryController.text.trim(),
+            'category': _categoryController.text.trim(),
+            'amount': amount,
+            'description': _descriptionController.text.trim(),
+            'purpose': _descriptionController.text.trim().isEmpty
+                ? 'Expense submitted on ${_formatDisplayDate(_selectedDate)}'
+                : _descriptionController.text.trim(),
+          },
+        );
+      }
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text("Expense saved successfully!"), backgroundColor: Colors.green),
+          content: Text("Expense saved successfully!"),
+          backgroundColor: Colors.green,
+        ),
       );
       context.pop(true); // Return true to signal success to the previous screen
     } catch (e) {
@@ -419,8 +446,10 @@ class _AddExpensePageState extends State<AddExpensePage> {
         final remaining = _selectedCategoryBudget!.remainingAmount;
         errorMessage = "You only have ₦${_formatAmount(remaining)} left in your budget for this category.";
       } else {
-        // Generic error for other cases. In a real app, you might log 'e' for debugging.
-        errorMessage = "Could not save the expense. Please check your connection and try again.";
+        final raw = e.toString().replaceFirst('Exception: ', '').trim();
+        errorMessage = raw.isEmpty
+            ? "Could not save the expense. Please check your connection and try again."
+            : raw;
       }
       showDialog(
         context: context,
