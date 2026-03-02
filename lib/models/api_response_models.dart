@@ -40,12 +40,15 @@ class Expense {
   });
 
   factory Expense.fromJson(Map<String, dynamic> json) {
+    final title = (json['title'] ?? json['purpose'] ?? json['category'] ?? '')
+        .toString();
+    final description = (json['description'] ?? json['purpose'])?.toString();
     return Expense(
       id: (json['expense_id'] ?? json['id'] ?? '').toString(),
-      title: (json['title'] ?? '').toString(),
+      title: title,
       amount: (json['amount'] as num?)?.toDouble() ?? 0,
       category: (json['category'] ?? '').toString(),
-      description: json['description']?.toString(),
+      description: description,
       status: (json['status'] ?? 'pending').toString(),
       submittedAt: json['submitted_at'] != null
           ? DateTime.parse(json['submitted_at'].toString())
@@ -54,9 +57,10 @@ class Expense {
           ? DateTime.parse(json['created_at'].toString())
           : DateTime.now(),
       receiptUrl: json['receipt_url']?.toString(),
-      submittedBy: (json['submitted_by'] ?? '').toString(),
+      submittedBy: (json['submitted_by'] ?? json['requested_by'] ?? '')
+          .toString(),
       reviewedBy: json['reviewed_by']?.toString(),
-      reviewNote: json['review_note']?.toString(),
+      reviewNote: (json['review_note'] ?? json['rejection_reason'])?.toString(),
       reviewedAt: json['reviewed_at'] != null
           ? DateTime.parse(json['reviewed_at'].toString())
           : null,
@@ -121,12 +125,20 @@ class Budget {
   });
 
   factory Budget.fromJson(Map<String, dynamic> json) {
+    final allocated =
+        (json['allocated_amount'] as num?)?.toDouble() ??
+        (json['total_amount'] as num?)?.toDouble() ??
+        0;
+    final spent = (json['spent_amount'] as num?)?.toDouble() ?? 0;
+    final remaining =
+        (json['remaining_amount'] as num?)?.toDouble() ?? (allocated - spent);
+
     return Budget(
       id: (json['budget_id'] ?? json['id'] ?? '').toString(),
       category: (json['category'] ?? '').toString(),
-      allocatedAmount: (json['allocated_amount'] as num?)?.toDouble() ?? 0,
-      spentAmount: (json['spent_amount'] as num?)?.toDouble() ?? 0,
-      remainingAmount: (json['remaining_amount'] as num?)?.toDouble() ?? 0,
+      allocatedAmount: allocated,
+      spentAmount: spent,
+      remainingAmount: remaining,
       period: (json['period'] ?? 'monthly').toString(),
       month: json['month'] as int?,
       year: json['year'] as int?,
@@ -597,15 +609,22 @@ class AuditLog {
   });
 
   factory AuditLog.fromJson(Map<String, dynamic> json) {
+    final changes = (json['changes'] as Map<String, dynamic>?) ??
+        {
+          'old_value': json['old_value'],
+          'new_value': json['new_value'],
+        };
+
     return AuditLog(
-      id: (json['audit_log_id'] ?? json['id'] ?? '').toString(),
+      id: (json['audit_log_id'] ?? json['audit_id'] ?? json['id'] ?? '')
+          .toString(),
       userId: (json['user_id'] ?? '').toString(),
       action: (json['action'] ?? '').toString(),
-      resource: (json['resource'] ?? '').toString(),
-      resourceId: (json['resource_id'] ?? '').toString(),
-      changes: (json['changes'] as Map<String, dynamic>?) ?? {},
-      timestamp: json['timestamp'] != null
-          ? DateTime.parse(json['timestamp'].toString())
+      resource: (json['resource'] ?? json['entity_type'] ?? '').toString(),
+      resourceId: (json['resource_id'] ?? json['entity_id'] ?? '').toString(),
+      changes: changes,
+      timestamp: (json['timestamp'] ?? json['created_at']) != null
+          ? DateTime.parse((json['timestamp'] ?? json['created_at']).toString())
           : DateTime.now(),
       ipAddress: json['ip_address']?.toString(),
     );

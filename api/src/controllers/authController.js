@@ -336,6 +336,26 @@ async function updateProfile(req, res) {
   }
 }
 
+async function getUserById(req, res) {
+  const { id } = req.params;
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('users')
+      .select('user_id, business_id, full_name, email, role, created_at')
+      .eq('user_id', id)
+      .single();
+
+    if (error || !data) return res.status(404).json({ error: 'User not found' });
+    if (data.business_id !== req.profile.business_id) {
+      return res.status(403).json({ error: 'Cannot access users outside your business' });
+    }
+
+    return res.status(200).json({ user: data });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 async function deleteUser(req, res) {
   const { id } = req.params;
   try {
@@ -371,6 +391,7 @@ module.exports = {
   sendPasswordResetOTP,
   verifyOTPAndResetPassword,
   getProfile,
+  getUserById,
   updateProfile,
   deleteUser
 };
