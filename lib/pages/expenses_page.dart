@@ -33,7 +33,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
         icon: const Icon(Icons.add),
         label: const Text('Submit Expense'),
       ),
-      body: Column(
+      body: SafeArea(
+        child: Column(
         children: [
           if (state.expenseSummary.isNotEmpty)
             Padding(
@@ -97,6 +98,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

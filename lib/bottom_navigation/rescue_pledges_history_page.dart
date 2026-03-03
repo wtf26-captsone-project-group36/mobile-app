@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:hervest_ai/features/rescue/models/rescue_models.dart';
 import 'package:hervest_ai/provider/rescue_provider.dart';
 import 'package:intl/intl.dart';
@@ -44,7 +44,8 @@ class _RescuePledgesHistoryPageState extends State<RescuePledgesHistoryPage> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Pledges History')),
-      body: Column(
+      body: SafeArea(
+        child: Column(
         children: [
           const SizedBox(height: 8),
           SingleChildScrollView(
@@ -86,6 +87,7 @@ class _RescuePledgesHistoryPageState extends State<RescuePledgesHistoryPage> {
                   ),
           ),
         ],
+        ),
       ),
     );
   }

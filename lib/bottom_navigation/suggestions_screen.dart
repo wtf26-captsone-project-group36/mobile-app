@@ -79,53 +79,55 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          !rescue.isReady
-              ? const Center(child: CircularProgressIndicator())
-              : suggestions.isEmpty
-              ? _buildEmptyState()
-              : Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildAIBanner(suggestions),
-                      const SizedBox(height: 14),
-                      const Text(
-                        'Recommended Rescue Actions',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            !rescue.isReady
+                ? const Center(child: CircularProgressIndicator())
+                : suggestions.isEmpty
+                ? _buildEmptyState()
+                : Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildAIBanner(suggestions),
+                        const SizedBox(height: 14),
+                        const Text(
+                          'Recommended Rescue Actions',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: suggestions.length,
-                          itemBuilder: (_, index) =>
-                              _buildSuggestionCard(suggestions[index]),
+                        const SizedBox(height: 10),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: suggestions.length,
+                            itemBuilder: (_, index) =>
+                                _buildSuggestionCard(suggestions[index]),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+            IgnorePointer(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConfettiWidget(
+                  confettiController: _tileConfettiController,
+                  blastDirection: pi / 2,
+                  emissionFrequency: 0.12,
+                  numberOfParticles: 18,
+                  maxBlastForce: 16,
+                  minBlastForce: 8,
+                  shouldLoop: false,
+                  gravity: 0.28,
                 ),
-          IgnorePointer(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: ConfettiWidget(
-                confettiController: _tileConfettiController,
-                blastDirection: pi / 2,
-                emissionFrequency: 0.12,
-                numberOfParticles: 18,
-                maxBlastForce: 16,
-                minBlastForce: 8,
-                shouldLoop: false,
-                gravity: 0.28,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: const RescueAIAssistantButton(),
     );

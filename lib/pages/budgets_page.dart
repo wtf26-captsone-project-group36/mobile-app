@@ -203,15 +203,17 @@ class _BudgetsPageState extends State<BudgetsPage> {
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: _primaryGreen))
-          : _budgets.isEmpty
-              ? _buildEmptyState()
-              : ListView.builder(
-                  padding: const EdgeInsets.all(20),
-                  itemCount: _budgets.length,
-                  itemBuilder: (context, index) => _buildBudgetCard(_budgets[index]),
-                ),
+      body: SafeArea(
+        child: _isLoading
+            ? Center(child: CircularProgressIndicator(color: _primaryGreen))
+            : _budgets.isEmpty
+                ? _buildEmptyState()
+                : ListView.builder(
+                    padding: const EdgeInsets.all(20),
+                    itemCount: _budgets.length,
+                    itemBuilder: (context, index) => _buildBudgetCard(_budgets[index]),
+                  ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddBudgetDialog(context),
         backgroundColor: _primaryGreen,

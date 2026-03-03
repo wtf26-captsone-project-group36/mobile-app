@@ -32,33 +32,35 @@ class ImpactDashboardPage extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: !rescue.isReady
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHero(metrics),
-                  const SizedBox(height: 22),
-                  const Text(
-                    'Detailed Metrics',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 14),
-                  _buildMetricGrid(metrics),
-                  const SizedBox(height: 24),
-                  _buildMilestoneCard(metrics, rescue.nextBadgeThreshold),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Earned Badges',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildBadgeList(badges),
-                ],
+      body: SafeArea(
+        child: !rescue.isReady
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHero(metrics),
+                    const SizedBox(height: 22),
+                    const Text(
+                      'Detailed Metrics',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 14),
+                    _buildMetricGrid(metrics),
+                    const SizedBox(height: 24),
+                    _buildMilestoneCard(metrics, rescue.nextBadgeThreshold),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Earned Badges',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildBadgeList(badges),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 

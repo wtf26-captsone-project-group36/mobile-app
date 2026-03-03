@@ -24,9 +24,10 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
     final state = context.watch<AppStateController>();
     return Scaffold(
       appBar: AppBar(title: const Text('Audit Logs')),
-      body: state.auditLogs.isEmpty
-          ? const Center(child: Text('No audit logs or access denied.'))
-          : ListView.builder(
+      body: SafeArea(
+        child: state.auditLogs.isEmpty
+            ? const Center(child: Text('No audit logs or access denied.'))
+            : ListView.builder(
               padding: const EdgeInsets.all(12),
               itemCount: state.auditLogs.length,
               itemBuilder: (context, index) {
@@ -42,6 +43,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                 );
               },
             ),
+      ),
     );
   }
 }

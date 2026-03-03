@@ -544,9 +544,10 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
         foregroundColor: Colors.black87,
         elevation: 0,
       ),
-      body: !_isLoaded
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
+      body: SafeArea(
+        child: !_isLoaded
+            ? const Center(child: CircularProgressIndicator())
+            : ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 _sectionCard(
@@ -750,6 +751,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                 // ),
               ],
             ),
+      ),
     );
   }
 
