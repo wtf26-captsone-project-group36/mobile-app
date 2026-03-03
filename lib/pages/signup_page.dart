@@ -36,7 +36,204 @@ class _SignUpPageState extends State<SignUpPage> {
   String _selectedBusinessType = '';
   String _selectedRole = '';
   bool _isLoading = false;
+  bool _agreedTerms = false;
+  bool _agreedPrivacy = false;
   String? _errorMessage;
+  static const String _termsText = '''
+SHEBUILDSTECH'S TERMS AND CONDITIONS
+1. Introduction
+Welcome to HerVest AI ("App", "Platform", "Service"). It is an AI-embedded service that
+These Terms and Conditions ("Terms") govern your access to and use of the HerVest AI mobile application and related services operated by SheBuildsTech ("Company", "we", "our", "us").
+By creating an account or using the App, you agree to be bound by these Terms.
+If you do not agree, please do not use the App.
+2. Eligibility
+You must:
+Be at least 18 years old
+Have legal capacity to operate a business
+Provide accurate registration information
+The App is designed for small and medium-sized enterprises (SMEs).
+3. Nature of the Service
+HerVest AI provides:
+Business transaction tracking
+Inventory management
+Expense anomaly detection
+Cashflow predictions
+Inventory expiry alerts
+HerVest AI uses artificial intelligence and statistical models to generate predictive insights.
+These insights are informational and do not constitute financial, accounting, or legal advice.
+4. Account Registration & Security
+You agree to:
+Provide accurate information
+Maintain confidentiality of login credentials
+Notify us promptly of unauthorized access
+Passwords are stored in hashed format. The Company is not liable for losses resulting from your failure to safeguard your credentials.
+We reserve the right to suspend accounts suspected of unauthorized activity.
+5. User Responsibilities
+You agree not to:
+Use the App for unlawful purposes
+Upload false or misleading financial data
+Attempt to access another business's data
+Reverse-engineer or exploit the platform
+You are solely responsible for the accuracy of the records entered.
+6. Multi-Tenant Data Separation
+Each business account is logically separated.
+Users may only access data belonging to their registered business entity.
+Attempting to access another business's data constitutes a material breach.
+7. AI-Generated Insights Disclaimer
+Predictions, risk levels, anomaly alerts, and financial projections:
+Are generated automatically
+May not be 100% accurate
+Depend on the quality of user-provided data
+The Company shall not be liable for business losses resulting from reliance on AI-generated outputs.
+Users are encouraged to seek independent professional advice where necessary.
+8. Data Ownership
+You retain ownership of the business data you input into the App.
+By using the App, you grant the Company a limited license to:
+Process your data
+Generate insights
+Improve system functionality
+We do not sell user's data.
+9. Fees (If Applicable)
+If subscription fees apply:
+Fees are billed monthly/annually
+Non-payment may result in suspension
+Fees are non-refundable unless required by law
+10. Intellectual Property
+All software, models, algorithms, and system architecture remain the property of the Company.
+You may not copy, reproduce, or distribute the App's technology.
+11. Security
+We implement reasonable technical and organizational security measures including:
+Encryption in transit
+Encryption at rest
+Access controls
+Audit logging
+However, no system is completely secure.
+12. Limitation of Liability
+To the fullest extent permitted by law:
+The Company shall not be liable for:
+Indirect or consequential losses
+Loss of profits
+Data loss caused by user negligence
+Business decisions made using AI outputs
+13. Suspension & Termination
+We may suspend or terminate accounts for:
+Violation of these Terms
+Fraudulent activity
+Security threats
+Non-payment
+Users may request account deletion at any time.
+14. Governing Law
+These Terms are governed by the Laws of the Federal Republic of Nigeria.
+Disputes shall be resolved through arbitration before resorting to litigation.
+15. Changes to Terms
+We may update these Terms from time to time. Continued use constitutes acceptance.
+''';
+  static const String _privacyText = '''
+SHEBUILDSTECH'S PRIVACY POLICY
+
+Introduction
+This Privacy Policy explains how SheBuildsTech collects, uses, processes, and protects personal data through HerVest AI. We are committed to privacy-by-design principles.
+
+Data We Collect
+A. Account Information
+Full name
+Email address
+Role within business
+Password (hashed)
+
+B. Business Information
+Business name
+Business type
+Currency
+Timezone
+Financial transaction data
+Inventory records
+
+AI-Generated Data
+Risk levels
+Anomaly indicators
+Cashflow predictions
+Expiry alerts
+
+Legal Basis for Processing (NDPA 2023)
+We process data based on:
+Contractual necessity (to provide services)
+Legitimate business interests
+User consent (where required)
+Legal compliance obligations
+
+Purpose of Processing
+We use data to:
+Provide ledger and inventory services
+Generate predictive analytics
+Detect unusual expenses
+Improve service performance
+Ensure system security
+We do not use your financial data for advertising.
+
+Privacy-by-Design Principles
+We apply:
+Data minimization
+Purpose limitation
+Storage limitation
+Role-based access control
+Encryption at rest and in transit
+Multi-tenant logical separation
+Secure password hashing
+Audit logging
+
+AI Processing Disclosure
+Automated processing is used to:
+Assess financial risk levels
+Predict cashflow sustainability
+Detect expense anomalies
+Identify inventory expiry risks
+Users may request clarification regarding automated decisions.
+
+Data Retention
+We retain personal data only for as long as necessary to:
+Provide services
+Meet legal obligations
+Resolve disputes
+Users may request deletion of their account. Deleted data may remain in encrypted backups for limited periods.
+
+Data Security
+We implement:
+TLS encryption
+Database encryption
+Secure access controls
+Restricted service accounts for ML processing
+Monitoring and logging
+
+Data Sharing
+We do not sell personal data. Data may however, be shared with:
+Cloud infrastructure providers
+Security monitoring providers
+Legal authorities (where required by law)
+All third parties are bound by confidentiality obligations.
+
+Cross-Border Transfers
+Where data is transferred or stored outside Nigeria, we ensure appropriate safeguards in line with NDPA 2023.
+
+Your Rights (NDPA)
+You have the right to:
+Access your data
+Correct inaccurate data
+Request deletion
+Withdraw consent (where applicable)
+Lodge complaints with the Nigeria Data Protection Commission (NDPC)
+
+Children's Data
+The App is not intended for individuals under 18.
+
+Updates to This Policy
+We may update this Privacy Policy periodically.
+
+Contact Information
+Data Controller: ShebuildsTech
+Email: privacy@shebuildstech.com
+Address: 7, Omo Igodalo Street, Ogudu, Lagos State, Nigeria
+''';
 
   @override
   void dispose() {
@@ -157,6 +354,30 @@ class _SignUpPageState extends State<SignUpPage> {
                 "Select your role",
                 roles,
                 (val) => setState(() => _selectedRole = val ?? ''),
+              ),
+
+              _buildConsentRow(
+                checked: _agreedTerms,
+                onChanged: (value) => setState(() => _agreedTerms = value ?? false),
+                prefix: "I have read and agreed to HerVest AI's ",
+                linkText: "Terms and Conditions",
+                onTapLink: () => _showPolicyDialog(
+                  title: 'Terms & Conditions',
+                  body: _termsText,
+                  dark: false,
+                ),
+              ),
+              const SizedBox(height: 4),
+              _buildConsentRow(
+                checked: _agreedPrivacy,
+                onChanged: (value) => setState(() => _agreedPrivacy = value ?? false),
+                prefix: "I have read and agreed to HerVest AI's ",
+                linkText: "Privacy Policy",
+                onTapLink: () => _showPolicyDialog(
+                  title: 'Privacy Policy',
+                  body: _privacyText,
+                  dark: true,
+                ),
               ),
 
               const SizedBox(height: 30),
@@ -300,6 +521,93 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
+  Widget _buildConsentRow({
+    required bool checked,
+    required ValueChanged<bool?> onChanged,
+    required String prefix,
+    required String linkText,
+    required VoidCallback onTapLink,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Checkbox(
+          value: checked,
+          onChanged: onChanged,
+          activeColor: primaryGreen,
+          visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: Wrap(
+              runSpacing: 4.0,
+              children: [
+                Text(
+                  prefix,
+                  style: const TextStyle(color: Colors.black87, fontSize: 12.6),
+                ),
+                GestureDetector(
+                  onTap: onTapLink,
+                  child: Text(
+                    linkText,
+                    style: const TextStyle(
+                      color: Color(0xFF1877F2),
+                      fontSize: 12.6,
+                      fontWeight: FontWeight.w600,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showPolicyDialog({
+    required String title,
+    required String body,
+    required bool dark,
+  }) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        final screenHeight = MediaQuery.of(ctx).size.height;
+        final textColor = dark ? Colors.white : Colors.black87;
+        return AlertDialog(
+          backgroundColor: dark ? Colors.black : Colors.white,
+          title: Text(title, style: TextStyle(color: textColor)),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: screenHeight * 0.58,
+            child: Scrollbar(
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                child: Text(
+                  body,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _handleSignUp(BuildContext context) async {
     final fullName = _fullNameController.text.trim();
     final email = _emailController.text.trim();
@@ -319,6 +627,14 @@ class _SignUpPageState extends State<SignUpPage> {
     }
     if (_selectedRole.isEmpty) {
       setState(() => _errorMessage = 'Please select your role.');
+      return;
+    }
+    if (!_agreedTerms) {
+      setState(() => _errorMessage = 'Please agree to the Terms and Conditions.');
+      return;
+    }
+    if (!_agreedPrivacy) {
+      setState(() => _errorMessage = 'Please agree to the Privacy Policy.');
       return;
     }
 
