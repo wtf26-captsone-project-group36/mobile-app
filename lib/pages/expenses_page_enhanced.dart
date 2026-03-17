@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hervest_ai/provider/app_state_controller_mock.dart';
 import 'package:hervest_ai/provider/profile_controller.dart';
+import 'package:hervest_ai/utils/number_formatter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -849,9 +851,14 @@ class _ExpensesPageEnhancedState extends State<ExpensesPageEnhanced> {
               TextField(
                 controller: amountController,
                 keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9,]')),
+                  CommaSeparatedNumberFormatter(),
+                ],
                 decoration: InputDecoration(
                   labelText: 'Amount (NGN)',
-                  hintText: '0.00',
+                  hintText: '20,000',
+                  helperText: 'Commas auto-added (type 20000 or 20,000)',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               ),
@@ -895,7 +902,11 @@ class _ExpensesPageEnhancedState extends State<ExpensesPageEnhanced> {
     );
 
     if (result == true && mounted) {
-      final amount = double.tryParse(amountController.text.trim()) ?? 0;
+      // Strip commas from amount before parsing
+      final amountText = amountController.text
+          .replaceAll(',', '')
+          .trim();
+      final amount = double.tryParse(amountText) ?? 0;
       if (amount <= 0) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Amount must be greater than 0')),

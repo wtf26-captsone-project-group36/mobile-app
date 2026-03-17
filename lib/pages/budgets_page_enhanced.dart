@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart';
 import 'package:hervest_ai/core/config/demo_flags.dart';
 import 'package:hervest_ai/core/network/budget_api_service.dart';
 import 'package:hervest_ai/core/network/predictions_api_service.dart';
 import 'package:hervest_ai/core/storage/cashflow_fallback_store.dart';
 import 'package:hervest_ai/core/storage/app_session_store.dart';
 import 'package:hervest_ai/models/api_response_models.dart';
+import 'package:hervest_ai/utils/number_formatter.dart';
 import 'package:intl/intl.dart';
 
 /// Enhanced BudgetsPage with predictions, better UX, and proper theme
@@ -798,8 +800,13 @@ class _BudgetsPageEnhancedState extends State<BudgetsPageEnhanced> {
                 TextField(
                   controller: amountController,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9,]')),
+                    CommaSeparatedNumberFormatter(),
+                  ],
                   decoration: InputDecoration(
-                    hintText: "100000",
+                    hintText: "100,000",
+                    helperText: "Commas auto-added (type 50000 or 50,000)",
                     hintStyle: const TextStyle(color: Colors.black45),
                     filled: true,
                     fillColor: Colors.white,
@@ -853,9 +860,11 @@ class _BudgetsPageEnhancedState extends State<BudgetsPageEnhanced> {
                         ),
                         onPressed: () {
                           final category = categoryController.text.trim();
-                          final amount = double.tryParse(
-                                  amountController.text.trim()) ??
-                              0;
+                          // Strip commas from amount before parsing
+                          final amountText = amountController.text
+                              .replaceAll(',', '')
+                              .trim();
+                          final amount = double.tryParse(amountText) ?? 0;
 
                           if (category.isEmpty || amount <= 0) {
                             ScaffoldMessenger.of(context).showSnackBar(
