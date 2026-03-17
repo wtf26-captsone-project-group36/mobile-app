@@ -411,6 +411,7 @@ class _ProfilePageState extends State<ProfilePage> {
           apiBody['business_type'] = mappedBusinessType;
         }
       }
+      if (location != null) apiBody['location'] = location;
 
       if (apiBody.isNotEmpty) {
         try {

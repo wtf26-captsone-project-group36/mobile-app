@@ -274,14 +274,17 @@ class _LoginPageState extends State<LoginPage> {
               : displayNameFromEmail(email);
 
       if (!context.mounted) return;
+      // Get backend values, or use current stored values if backend is empty
+      final backendPhone = (user['phone'] ?? '').toString();
+      final backendLocation = (user['location'] ?? '').toString();
       await profile.updateProfile(
         fullName: fullName,
         email: (user['email'] ?? email).toString(),
-        phone: '',
+        phone: backendPhone.isNotEmpty ? backendPhone : profile.phone,
         businessName: (business['business_name'] ?? '').toString(),
         role: (user['role'] ?? 'owner').toString(),
         businessType: (business['business_type'] ?? '').toString(),
-        location: '',
+        location: backendLocation.isNotEmpty ? backendLocation : profile.location,
       );
 
       if (!context.mounted) return;

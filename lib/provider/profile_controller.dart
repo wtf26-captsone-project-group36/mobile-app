@@ -143,6 +143,11 @@ class ProfileController extends ChangeNotifier {
         businessType = backendBusinessType;
         await prefs.setString(_businessTypeKey, backendBusinessType);
       }
+      final backendLocation = (user['location'] ?? '').toString();
+      if (backendLocation.isNotEmpty) {
+        location = backendLocation;
+        await prefs.setString(_locationKey, backendLocation);
+      }
     } catch (_) {
       // Keep local profile cache when backend profile cannot be fetched.
     }
