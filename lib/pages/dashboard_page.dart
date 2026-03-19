@@ -278,36 +278,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildRescueAssistantEntry() {
-    return GestureDetector(
-      onTap: () {
-        context.read<RescueProvider>().requestAssistantOpen();
-        context.go('/suggestions');
-      },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: primaryGreen.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: primaryGreen.withValues(alpha: 0.25)),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.smart_toy_outlined, color: primaryGreen),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Text(
-                'Rescue Assistant: Ask what to rescue today',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double compactWidth = ((screenWidth - 40) * 0.84).clamp(260.0, 560.0)
+        as double;
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: SizedBox(
+        width: compactWidth,
+        child: GestureDetector(
+          onTap: () {
+            context.read<RescueProvider>().requestAssistantOpen();
+            context.go('/suggestions');
+          },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: primaryGreen.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: primaryGreen.withValues(alpha: 0.25)),
             ),
-            Chip(
-              label: const Text('Open'),
-              visualDensity: VisualDensity.compact,
-              backgroundColor: Colors.white,
-              labelStyle: TextStyle(color: primaryGreen),
+            child: Row(
+              children: [
+                Icon(Icons.smart_toy_outlined, color: primaryGreen),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Rescue Assistant: Ask what to rescue today',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                Chip(
+                  label: const Text('Open'),
+                  visualDensity: VisualDensity.compact,
+                  backgroundColor: Colors.white,
+                  labelStyle: TextStyle(color: primaryGreen),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
