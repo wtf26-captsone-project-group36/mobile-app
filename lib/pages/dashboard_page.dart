@@ -29,6 +29,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       builder: (context, invProvider, appState, child) {
         return Scaffold(
           backgroundColor: backgroundCream,
+          floatingActionButton: _buildGeminiFab(context),
           body: SafeArea(
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(
@@ -517,6 +518,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
       icon: icon,
       color: color,
       onTap: () => context.push(route),
+    );
+  }
+
+  Widget _buildGeminiFab(BuildContext context) {
+    return FloatingActionButton(
+      onPressed: () => context.push('/gemini-assistant'),
+      backgroundColor: Colors.transparent,
+      elevation: 6,
+      child: Ink(
+        width: 56,
+        height: 56,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            colors: [Color(0xFF3E63FF), Color(0xFF9E57FF)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: const Icon(Icons.auto_awesome, color: Colors.white),
+      ),
     );
   }
 }

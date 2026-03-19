@@ -23,6 +23,7 @@ import 'package:hervest_ai/pages/account_settings_page.dart';
 import 'package:hervest_ai/pages/audit_logs_page.dart';
 import 'package:hervest_ai/pages/budgets_page.dart';
 import 'package:hervest_ai/pages/expenses_page.dart';
+import 'package:hervest_ai/gemini/gemini_location_suggestion.dart';
 
 // Shell + tab roots
 import 'package:hervest_ai/bottom_navigation/bottom_navigation.dart';
@@ -171,6 +172,11 @@ final GoRouter appRouter = GoRouter(
       path: '/ai-insights',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const AiInsightsPage(),
+    ),
+    GoRoute(
+      path: '/gemini-assistant',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const AiDonationAssistantScreen(),
     ),
 
     // Find your existing '/inventory/donation-success' route and update it
