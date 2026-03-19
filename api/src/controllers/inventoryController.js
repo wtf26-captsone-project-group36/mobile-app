@@ -244,6 +244,7 @@ async function updateItem(req, res) {
       message: err.message
     });
   }
+}
 
 async function deleteItem(req, res) {
   const { id } = req.params;
@@ -367,4 +368,3 @@ function validateInventoryUpdates(updates, existing) {
 }
 
 module.exports = { insertItem, selectItems, updateItem, deleteItem };
-}
